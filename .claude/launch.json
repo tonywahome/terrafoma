@@ -4,7 +4,16 @@
     {
       "name": "backend",
       "runtimeExecutable": ".venv/Scripts/python",
-      "runtimeArgs": ["-m", "uvicorn", "main:app", "--reload", "--host", "0.0.0.0", "--port", "8001"],
+      "runtimeArgs": [
+        "-m",
+        "uvicorn",
+        "main:app",
+        "--reload",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001"
+      ],
       "port": 8001
     },
     {
@@ -16,7 +25,14 @@
     {
       "name": "streamlit",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "streamlit", "run", "app.py", "--server.port", "8501"],
+      "runtimeArgs": [
+        "-m",
+        "streamlit",
+        "run",
+        "app.py",
+        "--server.port",
+        "8501"
+      ],
       "port": 8501
     }
   ]
