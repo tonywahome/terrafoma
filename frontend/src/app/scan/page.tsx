@@ -5,10 +5,11 @@ import mapboxgl from "mapbox-gl";
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import IntegrityBadge from "@/components/IntegrityBadge";
 import RiskGauge from "@/components/RiskGauge";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import { api } from "@/lib/api";
 import type { ScanResult } from "@/lib/types";
 
-export default function ScanPage() {
+function ScanPageContent() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const draw = useRef<MapboxDraw | null>(null);
@@ -325,5 +326,13 @@ export default function ScanPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ScanPage() {
+  return (
+    <ProtectedRoute allowedRoles={["admin"]}>
+      <ScanPageContent />
+    </ProtectedRoute>
   );
 }

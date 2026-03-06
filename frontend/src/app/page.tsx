@@ -1,9 +1,14 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import StatsBar from "@/components/StatsBar";
 import HeroVideo from "@/components/HeroVideo";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Home() {
+  const { user, isAuthenticated } = useAuth();
+
   return (
     <div>
       {/* Hero + StatsBar — one unified video-backed block */}
@@ -21,20 +26,77 @@ export default function Home() {
               Empowering local economies through transparent, AI-verified
               natural capital. Connecting land stewards with local emitters.
             </p>
-            <div className="animate-fade-up-delay-2 flex gap-4 justify-center">
-              <Link
-                href="/scan"
-                className="bg-white text-terra-700 px-6 py-3 rounded-lg font-semibold hover:bg-terra-50 transition-colors duration-200"
-              >
-                Scan Land
-              </Link>
-              <Link
-                href="/marketplace"
-                className="border-2 border-white text-white px-6 py-3 rounded-lg font-semibold hover:bg-white/15 transition-colors duration-200"
-              >
-                Buy Credits
-              </Link>
-            </div>
+            
+            {/* Show signup buttons only for non-authenticated users */}
+            {!isAuthenticated ? (
+              <>
+                <div className="animate-fade-up-delay-2 flex flex-col sm:flex-row gap-4 justify-center items-center">
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <Link
+                      href="/signup"
+                      className="bg-white text-terra-700 px-8 py-4 rounded-lg font-semibold hover:bg-terra-50 transition-all duration-200 shadow-lg hover:shadow-xl"
+                    >
+                      <div className="text-lg">🌳 I'm a Landowner</div>
+                      <div className="text-xs text-gray-600 mt-1">Register land for credits</div>
+                    </Link>
+                    <Link
+                      href="/signup"
+                      className="border-2 border-white bg-white/10 backdrop-blur-sm text-white px-8 py-4 rounded-lg font-semibold hover:bg-white/20 transition-all duration-200 shadow-lg hover:shadow-xl"
+                    >
+                      <div className="text-lg">🏭 I'm a Business</div>
+                      <div className="text-xs text-white/80 mt-1">Offset emissions</div>
+                    </Link>
+                  </div>
+                </div>
+                <div className="mt-6 animate-fade-up-delay-3">
+                  <Link
+                    href="/marketplace"
+                    className="text-white/90 hover:text-white text-sm underline underline-offset-4"
+                  >
+                    Or explore the marketplace →
+                  </Link>
+                </div>
+              </>
+            ) : (
+              <div className="animate-fade-up-delay-2 flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <div className="flex flex-col sm:flex-row gap-4">
+                  {user?.role === "landowner" ? (
+                    <Link
+                      href="/request-registration"
+                      className="bg-white text-terra-700 px-8 py-4 rounded-lg font-semibold hover:bg-terra-50 transition-all duration-200 shadow-lg hover:shadow-xl"
+                    >
+                      <div className="text-lg">🌳 Register Your Land</div>
+                      <div className="text-xs text-gray-600 mt-1">Request carbon credit certification</div>
+                    </Link>
+                  ) : user?.role === "admin" ? (
+                    <Link
+                      href="/scan"
+                      className="bg-white text-terra-700 px-8 py-4 rounded-lg font-semibold hover:bg-terra-50 transition-all duration-200 shadow-lg hover:shadow-xl"
+                    >
+                      <div className="text-lg">🛰️ Scan Land</div>
+                      <div className="text-xs text-gray-600 mt-1">AI satellite analysis</div>
+                    </Link>
+                  ) : (
+                    <Link
+                      href="/dashboard"
+                      className="bg-white text-terra-700 px-8 py-4 rounded-lg font-semibold hover:bg-terra-50 transition-all duration-200 shadow-lg hover:shadow-xl"
+                    >
+                      <div className="text-lg">📊 View Dashboard</div>
+                      <div className="text-xs text-gray-600 mt-1">Track your emissions</div>
+                    </Link>
+                  )}
+                  <Link
+                    href="/marketplace"
+                    className="border-2 border-white bg-white/10 backdrop-blur-sm text-white px-8 py-4 rounded-lg font-semibold hover:bg-white/20 transition-all duration-200 shadow-lg hover:shadow-xl"
+                  >
+                    <div className="text-lg">🛒 Browse Marketplace</div>
+                    <div className="text-xs text-white/80 mt-1">
+                      {user?.role === "landowner" ? "View your credits" : "Buy credits"}
+                    </div>
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Stats ribbon — glassy, sits on the video */}
@@ -115,25 +177,11 @@ export default function Home() {
           <h2 className="text-3xl font-bold mb-4 text-white">
             Ready to Make an Impact?
           </h2>
-          <p className="text-white/80 mb-8">
+          <p className="text-white/80">
             Whether you&apos;re a landowner looking to monetize your
             conservation efforts or a business seeking verified local offsets,
             TerraFoma makes it simple.
           </p>
-          <div className="flex gap-4 justify-center">
-            <Link
-              href="/scan"
-              className="bg-terra-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-terra-700 transition-colors duration-200"
-            >
-              I&apos;m a Landowner
-            </Link>
-            <Link
-              href="/dashboard"
-              className="bg-white text-gray-900 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors duration-200"
-            >
-              I&apos;m a Business
-            </Link>
-          </div>
         </div>
       </section>
     </div>
