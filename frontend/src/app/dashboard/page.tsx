@@ -28,7 +28,7 @@ const globalEmissionsData = [
   { year: "1992", emissions: 20.61 },
   { year: "1993", emissions: 20.72 },
   { year: "1994", emissions: 20.83 },
-  { year: "1995", emissions: 21.40 },
+  { year: "1995", emissions: 21.4 },
   { year: "1996", emissions: 21.85 },
   { year: "1997", emissions: 22.25 },
   { year: "1998", emissions: 22.43 },
@@ -47,7 +47,7 @@ const globalEmissionsData = [
   { year: "2011", emissions: 31.46 },
   { year: "2012", emissions: 31.79 },
   { year: "2013", emissions: 32.44 },
-  { year: "2014", emissions: 32.50 },
+  { year: "2014", emissions: 32.5 },
   { year: "2015", emissions: 32.37 },
   { year: "2016", emissions: 32.44 },
   { year: "2017", emissions: 32.98 },
@@ -97,15 +97,15 @@ export default function DashboardPage() {
       console.log("📊 Loading dashboard data...");
       console.log("API URL:", process.env.NEXT_PUBLIC_API_URL);
       setStatsLoading(true);
-      
+
       const [statsData, creditsData] = await Promise.all([
         api.getCreditStats(),
         api.getCredits({ status: "listed" }),
       ]);
-      
+
       console.log("✅ Stats data received:", statsData);
       console.log("✅ Credits data received:", creditsData);
-      
+
       setStats(statsData as CreditStats);
       setCredits(creditsData as any[]);
       setStatsLoading(false);
@@ -170,7 +170,9 @@ export default function DashboardPage() {
             <p className="text-3xl font-bold">
               {globalEmissionsData[globalEmissionsData.length - 1].emissions} Gt
             </p>
-            <p className="text-xs opacity-80 mt-1">CO₂ from fuel combustion (IEA)</p>
+            <p className="text-xs opacity-80 mt-1">
+              CO₂ from fuel combustion (IEA)
+            </p>
             <div className="mt-3 flex items-center text-xs">
               <span className="bg-red-400 bg-opacity-30 px-2 py-1 rounded">
                 +1.5% from 2022
@@ -197,7 +199,11 @@ export default function DashboardPage() {
             <p className="text-xs opacity-80 mt-1">Listed carbon credits</p>
             <div className="mt-3 flex items-center text-xs">
               <span className="bg-green-400 bg-opacity-30 px-2 py-1 rounded">
-                {statsLoading ? "Loading..." : stats ? `${stats.total_tco2e.toFixed(0)} tCO₂e` : "0 tCO₂e"}
+                {statsLoading
+                  ? "Loading..."
+                  : stats
+                    ? `${stats.total_tco2e.toFixed(0)} tCO₂e`
+                    : "0 tCO₂e"}
               </span>
             </div>
           </div>
@@ -226,9 +232,7 @@ export default function DashboardPage() {
 
           <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white shadow-lg">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium opacity-90">
-                Avg Integrity
-              </h3>
+              <h3 className="text-sm font-medium opacity-90">Avg Integrity</h3>
               <span className="text-2xl">🎯</span>
             </div>
             <p className="text-3xl font-bold">
@@ -249,19 +253,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-<<<<<<< HEAD
-        {/* Results */}
-        <div className="bg-white rounded-xl border shadow-sm p-6">
-          <h2 className="text-xl font-semibold mb-4">Your Footprint</h2>
-          {result ? (
-            <div className="space-y-6">
-              <div className="text-center">
-                <div className="text-5xl font-bold text-terra-600">
-                  {result.annual_tco2e.toFixed(1)}
-                </div>
-                <div className="text-gray-500 mt-1">tCO2e per year</div>
-              </div>
-=======
         {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Global Emissions Trend */}
@@ -273,7 +264,13 @@ export default function DashboardPage() {
             <ResponsiveContainer width="100%" height={300}>
               <AreaChart data={globalEmissionsData}>
                 <defs>
-                  <linearGradient id="colorEmissions" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient
+                    id="colorEmissions"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
                     <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8} />
                     <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
                   </linearGradient>
@@ -299,10 +296,10 @@ export default function DashboardPage() {
               </AreaChart>
             </ResponsiveContainer>
             <p className="text-sm text-gray-500 mt-2 text-center">
-              Historical data: IEA CO₂ emissions from fuel combustion (1990-2023)
+              Historical data: IEA CO₂ emissions from fuel combustion
+              (1990-2023)
             </p>
           </div>
->>>>>>> 67992a6 (feat: Add location service, update dashboard with real IEA emissions data, enhance biomass model logging)
 
           {/* Emissions by Sector */}
           <div className="bg-white rounded-xl border shadow-sm p-6">
@@ -331,10 +328,7 @@ export default function DashboardPage() {
             </ResponsiveContainer>
             <div className="grid grid-cols-2 gap-2 mt-4">
               {sectorEmissions.map((sector) => (
-                <div
-                  key={sector.name}
-                  className="flex items-center text-sm"
-                >
+                <div key={sector.name} className="flex items-center text-sm">
                   <div
                     className="w-3 h-3 rounded mr-2"
                     style={{ backgroundColor: sector.color }}
@@ -541,9 +535,7 @@ export default function DashboardPage() {
 
         {/* Call to Action */}
         <div className="bg-gradient-to-r from-terra-600 to-green-600 rounded-xl p-8 text-white text-center shadow-lg">
-          <h3 className="text-2xl font-bold mb-2">
-            Ready to Make an Impact?
-          </h3>
+          <h3 className="text-2xl font-bold mb-2">Ready to Make an Impact?</h3>
           <p className="mb-6 opacity-90">
             Browse our marketplace of verified carbon credits from conservation
             projects across Kenya
