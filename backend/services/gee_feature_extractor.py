@@ -1,56 +1,82 @@
 """
 Google Earth Engine feature extraction for real-time biomass estimation.
 Extracts the same features used for training the biomass model.
+
+Falls back to synthetic mock data when the earthengine-api package is not
+installed or GEE credentials are not configured.
 """
 
-import ee
 import logging
-from typing import Dict, Optional, List
+from typing import Dict, Optional
 import numpy as np
 
 logger = logging.getLogger(__name__)
 
-# Initialize EE once at module load
+# Optional GEE dependency — falls back to mock data if not installed
 try:
+    import ee
     ee.Initialize()
+    _GEE_AVAILABLE = True
     logger.info("Google Earth Engine initialized successfully")
 except Exception as e:
-    logger.warning(f"EE initialization failed: {e}")
+    _GEE_AVAILABLE = False
+    logger.warning(f"GEE not available ({e}). Scan will use synthetic mock features.")
 
 
-def calculate_indices(image: ee.Image) -> ee.Image:
-    """
-    Calculate vegetation indices from Sentinel-2 bands.
-    Same indices as used in training data.
-    """
-    # NDVI
+def _mock_features(geometry: Dict) -> Dict:
+    """Generate synthetic Sentinel-2 features when GEE is unavailable."""
+    from services.mock_data import generate_mock_bands
+    # Infer land use from geometry centroid latitude (rough Kenya heuristic)
+    land_use = "forest"
+    try:
+        coords = geometry.get("coordinates", [[]])
+        if geometry.get("type") == "Polygon":
+            flat = [c for ring in coords for c in ring]
+        else:
+            flat = [coords]
+        lat = sum(c[1] for c in flat) / len(flat) if flat else -0.4
+        land_use = "grassland" if lat > 0 else "agroforestry" if lat > -0.5 else "forest"
+    except Exception:
+        pass
+
+    bands = generate_mock_bands(land_use)
+    ndvi = bands.get("NDVI", 0.65)
+    evi  = bands.get("EVI", ndvi * 0.6)
+    return {
+        "blue":      bands.get("B2", 0.05),
+        "green":     bands.get("B3", 0.08),
+        "red":       bands.get("B4", 0.06),
+        "nir":       bands.get("B8", 0.35),
+        "swir1":     bands.get("B11", 0.18),
+        "swir2":     bands.get("B12", 0.10),
+        "ndvi":      ndvi,
+        "evi":       evi,
+        "savi":      round(ndvi * 0.85, 4),
+        "ndmi":      round((bands.get("B8", 0.35) - bands.get("B11", 0.18)) /
+                          (bands.get("B8", 0.35) + bands.get("B11", 0.18) + 1e-9), 4),
+        "nbr":       round((bands.get("B8", 0.35) - bands.get("B12", 0.10)) /
+                          (bands.get("B8", 0.35) + bands.get("B12", 0.10) + 1e-9), 4),
+        "elevation": float(np.random.uniform(1600, 2800)),
+        "slope":     float(np.random.uniform(2, 18)),
+        "n_images":  0,
+    }
+
+
+def calculate_indices(image):
+    """Calculate vegetation indices from Sentinel-2 bands (requires GEE)."""
+    if not _GEE_AVAILABLE:
+        return image
     ndvi = image.normalizedDifference(['B8', 'B4']).rename('ndvi')
-    
-    # EVI
     evi = image.expression(
         '2.5 * ((NIR - RED) / (NIR + 6 * RED - 7.5 * BLUE + 1))',
-        {
-            'NIR': image.select('B8'),
-            'RED': image.select('B4'),
-            'BLUE': image.select('B2')
-        }
+        {'NIR': image.select('B8'), 'RED': image.select('B4'), 'BLUE': image.select('B2')}
     ).rename('evi')
-    
-    # SAVI (L=0.5)
     savi = image.expression(
         '((NIR - RED) / (NIR + RED + 0.5)) * 1.5',
-        {
-            'NIR': image.select('B8'),
-            'RED': image.select('B4')
-        }
+        {'NIR': image.select('B8'), 'RED': image.select('B4')}
     ).rename('savi')
-    
-    # NDMI
     ndmi = image.normalizedDifference(['B8', 'B11']).rename('ndmi')
-    
-    # NBR
-    nbr = image.normalizedDifference(['B8', 'B12']).rename('nbr')
-    
+    nbr  = image.normalizedDifference(['B8', 'B12']).rename('nbr')
     return image.addBands([ndvi, evi, savi, ndmi, nbr])
 
 
@@ -62,17 +88,12 @@ def extract_sentinel_features(
 ) -> Optional[Dict]:
     """
     Extract Sentinel-2 features for a geometry.
-    
-    Args:
-        geometry: GeoJSON geometry (Point or Polygon)
-        start_date: Start date for imagery (YYYY-MM-DD)
-        end_date: End date for imagery (YYYY-MM-DD)
-        scale: Spatial resolution in meters (default 10m)
-        
-    Returns:
-        Dictionary with 13 features matching training data:
-        {blue, green, red, nir, swir1, swir2, ndvi, evi, savi, ndmi, nbr, elevation, slope}
+    Falls back to synthetic mock features when GEE is unavailable.
     """
+    if not _GEE_AVAILABLE:
+        logger.info("GEE unavailable — returning synthetic mock features")
+        return _mock_features(geometry)
+
     try:
         # Convert GeoJSON to EE geometry
         if geometry['type'] == 'Point':
