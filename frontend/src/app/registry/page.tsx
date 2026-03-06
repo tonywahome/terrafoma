@@ -11,13 +11,16 @@ export default function RegistryPage() {
   const [credits, setCredits] = useState<CarbonCredit[]>([]);
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    setLoading(true);
+    setError(null);
     const params = filter !== "all" ? { status: filter } : undefined;
     api
       .getCredits(params)
       .then((data) => setCredits(data as CarbonCredit[]))
-      .catch(() => {})
+      .catch((err) => setError(err?.message || "Failed to load credits. Is the backend running?"))
       .finally(() => setLoading(false));
   }, [filter]);
 
@@ -66,6 +69,12 @@ export default function RegistryPage() {
               <tr>
                 <td colSpan={7} className="px-6 py-12 text-center text-gray-400">
                   Loading...
+                </td>
+              </tr>
+            ) : error ? (
+              <tr>
+                <td colSpan={7} className="px-6 py-12 text-center text-red-500">
+                  {error}
                 </td>
               </tr>
             ) : credits.length === 0 ? (

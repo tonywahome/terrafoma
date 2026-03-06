@@ -193,27 +193,33 @@ def get_supabase_client() -> Client:
         return _supabase_client
     
     _client_initialized = True
-    
+
     try:
         # Try to create Supabase client
-        print(f"🔍 Attempting Supabase connection...")
-        print(f"🔍 URL: {settings.supabase_url}")
-        print(f"🔍 Anon key present: {bool(settings.supabase_anon_key)}")
-        
+        print(f"[DB] Attempting Supabase connection to {settings.supabase_url}")
+
         if settings.supabase_url and settings.supabase_anon_key and settings.supabase_url != "your-project-url":
-            _supabase_client = create_client(settings.supabase_url, settings.supabase_anon_key)
-            print(f"✅ Connected to Supabase: {settings.supabase_url}")
-            logger.info(f"✅ Connected to Supabase: {settings.supabase_url}")
-            return _supabase_client
+            client = create_client(settings.supabase_url, settings.supabase_anon_key)
+            # Verify the tables exist with a test query
+            try:
+                client.table("carbon_credits").select("id").limit(1).execute()
+                _supabase_client = client
+                print(f"[DB] Connected to Supabase: {settings.supabase_url}")
+                logger.info(f"Connected to Supabase: {settings.supabase_url}")
+                return _supabase_client
+            except Exception as table_err:
+                print(f"[DB] Supabase tables not found. Run backend/data/schema.sql in Supabase SQL editor.")
+                print(f"[DB] https://app.supabase.com/project/mozrcszdqinkjnnopkio/sql/new")
+                logger.warning(f"Supabase tables missing ({table_err}), falling back to in-memory database")
         else:
-            print("⚠️  Supabase credentials not properly configured")
+            print("[DB] Supabase credentials not configured, using in-memory database")
             logger.warning("Supabase credentials not properly configured")
     except Exception as e:
-        print(f"⚠️  Supabase connection failed: {e}")
-        logger.warning(f"⚠️  Supabase connection failed, using in-memory database: {e}")
-    
+        print(f"[DB] Supabase connection failed: {e}")
+        logger.warning(f"Supabase connection failed, using in-memory database: {e}")
+
     # Fall back to in-memory database
-    print("📦 Using in-memory database with sample data")
+    print("[DB] Using in-memory database with sample data")
     logger.info("Using in-memory database with sample data (Supabase not configured)")
     _in_memory_db.initialize_sample_data()
     _supabase_client = _in_memory_db
@@ -225,10 +231,10 @@ def get_admin_client() -> Client:
     try:
         if settings.supabase_url and settings.supabase_service_role_key and settings.supabase_url != "your-project-url":
             client = create_client(settings.supabase_url, settings.supabase_service_role_key)
-            logger.info(f"✅ Connected to Supabase with admin privileges")
+            logger.info("Connected to Supabase with admin privileges")
             return client
     except Exception as e:
-        logger.warning(f"⚠️  Supabase admin connection failed: {e}")
+        logger.warning(f"Supabase admin connection failed: {e}")
     
     logger.info("Using in-memory database (Supabase not configured)")
     _in_memory_db.initialize_sample_data()

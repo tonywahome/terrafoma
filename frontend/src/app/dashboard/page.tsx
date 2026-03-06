@@ -10,9 +10,11 @@ export default function DashboardPage() {
   const [fuelType, setFuelType] = useState("diesel");
   const [result, setResult] = useState<FootprintResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [calcError, setCalcError] = useState<string | null>(null);
 
   const handleCalculate = async () => {
     setLoading(true);
+    setCalcError(null);
     try {
       const data = (await api.calculateFootprint({
         energy_kwh_monthly: energyKwh,
@@ -20,8 +22,11 @@ export default function DashboardPage() {
         fuel_type: fuelType,
       })) as FootprintResult;
       setResult(data);
-    } catch (err) {
-      console.error("Calculation failed:", err);
+    } catch (err: any) {
+      setCalcError(
+        err?.message ||
+          "Calculation failed. Is the backend running on port 8002?",
+      );
     }
     setLoading(false);
   };
@@ -100,9 +105,7 @@ export default function DashboardPage() {
                 <div className="text-5xl font-bold text-terra-600">
                   {result.annual_tco2e.toFixed(1)}
                 </div>
-                <div className="text-gray-500 mt-1">
-                  tCO2e per year
-                </div>
+                <div className="text-gray-500 mt-1">tCO2e per year</div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">

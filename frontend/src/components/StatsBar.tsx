@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import type { CreditStats } from "@/lib/types";
 
-export default function StatsBar() {
+export default function StatsBar({ glassy = false }: { glassy?: boolean }) {
   const [stats, setStats] = useState<CreditStats | null>(null);
 
   useEffect(() => {
@@ -29,12 +29,20 @@ export default function StatsBar() {
       ];
 
   return (
-    <div className="bg-terra-800 text-white py-4">
+    <div
+      className={
+        glassy
+          ? "relative bg-terra-800/40 backdrop-blur-sm border-t border-terra-400/30 text-white py-4"
+          : "bg-terra-800 text-white py-4"
+      }
+    >
       <div className="max-w-7xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
         {items.map((item) => (
           <div key={item.label}>
             <div className="text-2xl font-bold">{item.value}</div>
-            <div className="text-terra-200 text-sm">{item.label}</div>
+            <div className={`text-sm ${glassy ? "text-white/70" : "text-terra-200"}`}>
+              {item.label}
+            </div>
           </div>
         ))}
       </div>

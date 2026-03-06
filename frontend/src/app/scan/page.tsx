@@ -3,8 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 import mapboxgl from "mapbox-gl";
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
-import "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css";
-import "mapbox-gl/dist/mapbox-gl.css";
 import IntegrityBadge from "@/components/IntegrityBadge";
 import RiskGauge from "@/components/RiskGauge";
 import { api } from "@/lib/api";
@@ -14,7 +12,7 @@ export default function ScanPage() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const draw = useRef<MapboxDraw | null>(null);
-  
+
   const [drawnGeometry, setDrawnGeometry] = useState<any>(null);
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -22,8 +20,13 @@ export default function ScanPage() {
   const [contracted, setContracted] = useState(false);
 
   useEffect(() => {
-    console.log("useEffect running, mapContainer:", mapContainer.current ? "exists" : "null", "map:", map.current ? "exists" : "null");
-    
+    console.log(
+      "useEffect running, mapContainer:",
+      mapContainer.current ? "exists" : "null",
+      "map:",
+      map.current ? "exists" : "null",
+    );
+
     if (map.current) {
       console.log("Map already initialized, skipping");
       return;
@@ -39,7 +42,7 @@ export default function ScanPage() {
     if (mapboxToken) {
       console.log("Token starts with:", mapboxToken.substring(0, 20) + "...");
     }
-    
+
     if (!mapboxToken) {
       console.error("Mapbox token not found in environment");
       return;
@@ -102,9 +105,9 @@ export default function ScanPage() {
     if (data && data.features.length > 0) {
       const feature = data.features[0];
       setDrawnGeometry(feature.geometry);
-      
+
       // Type guard to ensure it's a Polygon geometry
-      if (feature.geometry.type === 'Polygon') {
+      if (feature.geometry.type === "Polygon") {
         const coords = (feature.geometry as any).coordinates[0];
         const areaKm2 = calculatePolygonArea(coords);
         setArea(areaKm2 * 100);
@@ -131,7 +134,7 @@ export default function ScanPage() {
     if (!drawnGeometry) return;
     setLoading(true);
     setScanResult(null);
-    
+
     try {
       const result = (await api.runScan({
         geometry: drawnGeometry,
@@ -174,21 +177,18 @@ export default function ScanPage() {
         <div className="p-6">
           <h2 className="text-xl font-bold mb-4 text-gray-900">Land Scanner</h2>
           <p className="text-sm text-gray-500 mb-6">
-            Draw a polygon on the map to select your plot, then run an AI scan to estimate its carbon value using real satellite imagery.
+            Draw a polygon on the map to select your plot, then run an AI scan
+            to estimate its carbon value using real satellite imagery.
           </p>
 
           {drawnGeometry ? (
             <div className="space-y-4">
               <div className="bg-terra-50 rounded-lg p-4">
-                <h3 className="font-semibold text-terra-800">
-                  Selected Plot
-                </h3>
+                <h3 className="font-semibold text-terra-800">Selected Plot</h3>
                 <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
                   <div>
                     <span className="text-gray-500">Area:</span>{" "}
-                    <span className="font-medium">
-                      {area.toFixed(2)} ha
-                    </span>
+                    <span className="font-medium">{area.toFixed(2)} ha</span>
                   </div>
                   <div>
                     <span className="text-gray-500">Status:</span>{" "}
@@ -208,12 +208,14 @@ export default function ScanPage() {
                   {loading ? "Scanning with AI Model..." : "🛰️ Run AI Scan"}
                 </button>
               )}
-              
+
               {loading && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm">
                   <div className="flex items-center gap-2 mb-2">
                     <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                    <span className="font-semibold text-blue-900">Processing...</span>
+                    <span className="font-semibold text-blue-900">
+                      Processing...
+                    </span>
                   </div>
                   <ul className="space-y-1 text-blue-700 ml-6">
                     <li>• Extracting Sentinel-2 imagery</li>
@@ -310,7 +312,9 @@ export default function ScanPage() {
           ) : (
             <div className="text-center py-12">
               <div className="text-4xl mb-3">✏️</div>
-              <p className="text-gray-500 mb-4">Draw a polygon on the map to begin</p>
+              <p className="text-gray-500 mb-4">
+                Draw a polygon on the map to begin
+              </p>
               <div className="text-xs text-gray-400 space-y-1">
                 <p>1. Click on the map to start drawing</p>
                 <p>2. Click to place points around your plot</p>
