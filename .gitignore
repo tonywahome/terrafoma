@@ -28,6 +28,9 @@ build/
 .DS_Store
 Thumbs.db
 
+# Seed credentials – never commit real user passwords
+backend/data/users.json
+
 # ML artifacts (keep model.pkl for demo)
 *.log
 
