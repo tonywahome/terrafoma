@@ -1,4 +1,5 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
+import os
 
 
 class Settings(BaseSettings):
@@ -9,12 +10,19 @@ class Settings(BaseSettings):
     app_env: str = "development"
     api_host: str = "0.0.0.0"
     api_port: int = 8000
-    cors_origins: str = "http://localhost:3000,http://localhost:8501"
+    cors_origins: str = "http://localhost:3000,http://localhost:3001,http://localhost:8501"
     model_path: str = "./ml/model.pkl"
     integrity_model_path: str = "./ml/integrity_model.pkl"
 
-    class Config:
-        env_file = ".env"
+    model_config = SettingsConfigDict(
+        # Look for .env in parent directory (project root)
+        env_file=os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"),
+        env_file_encoding='utf-8',
+        # Allow extra fields in .env (like frontend variables)
+        extra='ignore',
+        # Case insensitive environment variable names
+        case_sensitive=False
+    )
 
 
 settings = Settings()

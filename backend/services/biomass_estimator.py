@@ -1,8 +1,11 @@
 import joblib
 import numpy as np
 import os
+import logging
 
-_biomass_model = None
+logger = logging.getLogger(__name__)
+
+_biomass_model_data = None
 _integrity_model = None
 
 LAND_USE_ENCODING = {
@@ -15,12 +18,16 @@ LAND_USE_ENCODING = {
 
 
 def _load_biomass_model():
-    global _biomass_model
-    if _biomass_model is None:
-        model_path = os.path.join(os.path.dirname(__file__), "..", "ml", "model.pkl")
+    """Load the trained biomass model with scaler."""
+    global _biomass_model_data
+    if _biomass_model_data is None:
+        model_path = os.path.join(os.path.dirname(__file__), "..", "ml", "models", "biomass_model_v1.pkl")
         if os.path.exists(model_path):
-            _biomass_model = joblib.load(model_path)
-    return _biomass_model
+            _biomass_model_data = joblib.load(model_path)
+            logger.info(f"Loaded biomass model v1 (Test R²={_biomass_model_data.get('test_r2', 'N/A')})")
+        else:
+            logger.warning(f"Biomass model not found at {model_path}")
+    return _biomass_model_data
 
 
 def _load_integrity_model():
@@ -41,6 +48,56 @@ def biomass_to_tco2e(biomass_tonnes_per_ha: float, area_hectares: float) -> floa
     return round(tco2e_per_ha * area_hectares, 2)
 
 
+def predict_biomass_from_features(feature_dict: dict) -> float:
+    """
+    Predict biomass using the trained Random Forest model.
+    
+    Args:
+        feature_dict: Dictionary with 13 features:
+            {blue, green, red, nir, swir1, swir2, ndvi, evi, savi, ndmi, nbr, elevation, slope}
+    
+    Returns:
+        Predicted biomass in tonnes/ha
+    """
+    model_data = _load_biomass_model()
+    
+    if model_data is None:
+        logger.error("Biomass model not loaded, using fallback formula")
+        # Fallback formula
+        ndvi = feature_dict.get('ndvi', 0.5)
+        evi = feature_dict.get('evi', 0.3)
+        biomass = ndvi * 300 + evi * 50
+        return round(float(np.clip(biomass, 5, 400)), 2)
+    
+    try:
+        # Get feature order from model
+        feature_cols = model_data['feature_cols']
+        
+        # Build feature array in correct order
+        X = np.array([[feature_dict[col] for col in feature_cols]])
+        
+        # Apply scaler
+        scaler = model_data['scaler']
+        X_scaled = scaler.transform(X)
+        
+        # Predict
+        model = model_data['model']
+        prediction = model.predict(X_scaled)[0]
+        
+        # Clip to reasonable range
+        biomass = float(np.clip(prediction, 1, 500))
+        
+        logger.info(f"Predicted biomass: {biomass:.2f} tonnes/ha (NDVI={feature_dict['ndvi']:.3f})")
+        return round(biomass, 2)
+        
+    except Exception as e:
+        logger.error(f"Error predicting biomass: {e}")
+        # Fallback
+        ndvi = feature_dict.get('ndvi', 0.5)
+        biomass = ndvi * 300
+        return round(float(np.clip(biomass, 5, 400)), 2)
+
+
 def estimate_biomass(
     ndvi: float,
     evi: float,
@@ -49,14 +106,17 @@ def estimate_biomass(
     precip: float,
     land_use: str,
 ) -> float:
-    model = _load_biomass_model()
+    """Legacy function for backward compatibility. Use predict_biomass_from_features for real predictions."""
+    model_data = _load_biomass_model()
     land_type = LAND_USE_ENCODING.get(land_use, 2)
 
-    if model is not None:
+    if model_data is not None and 'model' in model_data:
+        # This is a simplified version, may not match training features
+        logger.warning("Using legacy estimate_biomass - consider using predict_biomass_from_features with full features")
         features = np.array([[ndvi, evi, elevation, slope, precip, land_type]])
-        prediction = model.predict(features)[0]
-        return round(float(np.clip(prediction, 5, 350)), 2)
-
+        # Note: This won't work correctly with the real model which expects 13 features
+        # Fallback to formula
+        
     # Fallback formula if model not trained yet
     biomass = ndvi * 300 + evi * 50 + (precip - 800) / 1200 * 40 - slope * 0.5
     return round(float(np.clip(biomass, 5, 350)), 2)

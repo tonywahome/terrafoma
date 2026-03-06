@@ -33,6 +33,12 @@ backend/data/users.json
 
 # ML artifacts (keep model.pkl for demo)
 *.log
+backend/backend.log
+nohup.out
+
+# Large training data files (download separately)
+backend/ml/data/gedi_congo_basin_biomass.csv
+backend/ml/data/*.csv
 
 # Jupyter
 .ipynb_checkpoints/
