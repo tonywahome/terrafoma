@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import { api } from "@/lib/api";
 import type { FootprintResult } from "@/lib/types";
 import {
@@ -78,6 +79,14 @@ interface CreditStats {
 }
 
 export default function DashboardPage() {
+  return (
+    <ProtectedRoute allowedRoles={["business"]}>
+      <DashboardPageContent />
+    </ProtectedRoute>
+  );
+}
+
+function DashboardPageContent() {
   const [energyKwh, setEnergyKwh] = useState(5000);
   const [fuelLitres, setFuelLitres] = useState(500);
   const [fuelType, setFuelType] = useState("diesel");
@@ -546,12 +555,6 @@ export default function DashboardPage() {
               className="bg-white text-terra-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition shadow-md"
             >
               View Marketplace
-            </a>
-            <a
-              href="/scan"
-              className="bg-terra-800 text-white px-6 py-3 rounded-lg font-semibold hover:bg-terra-900 transition shadow-md"
-            >
-              Create Carbon Credit
             </a>
           </div>
         </div>
