@@ -1,11 +1,13 @@
 import uuid
 import logging
+from datetime import datetime
 from fastapi import APIRouter, HTTPException
 from models.risk import ScanRequest, ScanResponse
 from services.biomass_estimator import predict_biomass_from_features, biomass_to_tco2e, calculate_integrity_score
 from services.risk_scorer import calculate_risk_score, get_weather_data
 from services.gee_feature_extractor import extract_sentinel_features
 from services.carbon_calculator import calculate_credit_price
+from services.location_service import get_location_from_geometry, get_centroid_from_geometry
 from database import get_supabase_client
 import random
 
@@ -21,8 +23,13 @@ async def run_scan(request: ScanRequest):
     DEMO_USER_UUID = "00000000-0000-0000-0000-000000000001"
     owner_id = DEMO_USER_UUID if request.owner_id == "demo-user" else request.owner_id
     
-    # Try to get plot details from database if available
+    # Extract location from geometry
+    location = get_location_from_geometry(request.geometry)
+    logger.info(f"Extracted location: {location}")
+    
+    # Try to get plot details from database if available, or create one
     plot = None
+    plot_id = request.plot_id
     try:
         db = get_supabase_client()
         if request.plot_id:
@@ -30,12 +37,37 @@ async def run_scan(request: ScanRequest):
             if result.data:
                 plot = result.data[0]
                 logger.info(f"Found plot {request.plot_id} in database")
+                # Update plot with location if not already set
+                if not plot.get("region") or plot.get("region") == "Nyeri":
+                    db.table("land_plots").update({"region": location}).eq("id", request.plot_id).execute()
+                    logger.info(f"Updated plot {request.plot_id} with location: {location}")
+        
+        # If no plot_id provided, create a new plot
+        if not plot_id:
+            # Calculate area from geometry (rough estimate)
+            coords = get_centroid_from_geometry(request.geometry)
+            area_hectares = 10.0  # Default, can be calculated from geometry bounds
+            
+            new_plot = {
+                "id": str(uuid.uuid4()),
+                "owner_id": owner_id,
+                "name": f"Plot at {location}",
+                "geometry": request.geometry,
+                "area_hectares": area_hectares,
+                "region": location,
+                "land_use": "forest"
+            }
+            result = db.table("land_plots").insert(new_plot).execute()
+            plot = result.data[0]
+            plot_id = plot["id"]
+            logger.info(f"Created new plot {plot_id} at {location}")
+            
     except Exception as e:
         # Database not configured, use defaults
         logger.warning(f"Database not available: {e}")
 
     land_use = plot["land_use"] if plot else "forest"
-    region = plot.get("region", "Nyeri") if plot else "Nyeri"
+    region = location  # Use extracted location
     area = plot["area_hectares"] if plot else 10.0
     
     # Extract real Sentinel-2 features from Google Earth Engine
@@ -109,7 +141,7 @@ async def run_scan(request: ScanRequest):
     
     scan_record = {
         "id": scan_id,
-        "plot_id": request.plot_id,
+        "plot_id": plot_id,
         "mean_ndvi": ndvi,
         "mean_evi": evi,
         "estimated_biomass": biomass,
@@ -129,9 +161,9 @@ async def run_scan(request: ScanRequest):
         credit_record = {
             "id": credit_id,
             "scan_id": scan_id,
-            "plot_id": request.plot_id,
+            "plot_id": plot_id,
             "owner_id": owner_id,  # Use converted UUID
-            "vintage_year": 2024,
+            "vintage_year": datetime.now().year,  # Use current year dynamically
             "quantity_tco2e": tco2e,
             "price_per_tonne": price,
             "status": "listed",  # Automatically list the credit
@@ -146,7 +178,7 @@ async def run_scan(request: ScanRequest):
 
     return ScanResponse(
         scan_id=scan_id,
-        plot_id=request.plot_id,
+        plot_id=plot_id,
         mean_ndvi=ndvi,
         mean_evi=evi,
         estimated_biomass=biomass,

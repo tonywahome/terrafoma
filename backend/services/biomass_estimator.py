@@ -22,11 +22,38 @@ def _load_biomass_model():
     global _biomass_model_data
     if _biomass_model_data is None:
         model_path = os.path.join(os.path.dirname(__file__), "..", "ml", "models", "biomass_model_v1.pkl")
+        abs_model_path = os.path.abspath(model_path)
+        
+        logger.info(f"🔍 Attempting to load biomass model...")
+        logger.info(f"   Relative path: {model_path}")
+        logger.info(f"   Absolute path: {abs_model_path}")
+        logger.info(f"   File exists: {os.path.exists(model_path)}")
+        
         if os.path.exists(model_path):
-            _biomass_model_data = joblib.load(model_path)
-            logger.info(f"Loaded biomass model v1 (Test R²={_biomass_model_data.get('test_r2', 'N/A')})")
+            try:
+                _biomass_model_data = joblib.load(model_path)
+                logger.info(f"✅ Successfully loaded biomass model v1")
+                logger.info(f"   Test R²: {_biomass_model_data.get('test_r2', 'N/A')}")
+                logger.info(f"   Test RMSE: {_biomass_model_data.get('test_rmse', 'N/A')}")
+                logger.info(f"   Features: {len(_biomass_model_data.get('feature_cols', []))}")
+                logger.info(f"   Model type: {type(_biomass_model_data.get('model', None)).__name__}")
+            except Exception as e:
+                logger.error(f"❌ Error loading model file: {type(e).__name__}: {str(e)}")
+                logger.error(f"   Full traceback:", exc_info=True)
+                _biomass_model_data = None
         else:
-            logger.warning(f"Biomass model not found at {model_path}")
+            logger.warning(f"❌ Biomass model file not found at {abs_model_path}")
+            logger.warning(f"   Current working directory: {os.getcwd()}")
+            logger.warning(f"   Directory of this file: {os.path.dirname(__file__)}")
+            
+            # List what's actually in the models directory
+            models_dir = os.path.join(os.path.dirname(__file__), "..", "ml", "models")
+            if os.path.exists(models_dir):
+                logger.info(f"   Contents of models directory:")
+                for item in os.listdir(models_dir):
+                    logger.info(f"      - {item}")
+            else:
+                logger.warning(f"   Models directory does not exist: {models_dir}")
     return _biomass_model_data
 
 
@@ -59,43 +86,82 @@ def predict_biomass_from_features(feature_dict: dict) -> float:
     Returns:
         Predicted biomass in tonnes/ha
     """
+    logger.info("=" * 60)
+    logger.info("BIOMASS PREDICTION DEBUG TRACE")
+    logger.info("=" * 60)
+    
     model_data = _load_biomass_model()
     
     if model_data is None:
-        logger.error("Biomass model not loaded, using fallback formula")
+        logger.error("❌ FALLBACK MODE: Biomass model not loaded!")
+        logger.error(f"   Model path checked: {os.path.join(os.path.dirname(__file__), '..', 'ml', 'models', 'biomass_model_v1.pkl')}")
+        logger.error("   Using simple NDVI formula instead of trained model")
         # Fallback formula
         ndvi = feature_dict.get('ndvi', 0.5)
         evi = feature_dict.get('evi', 0.3)
         biomass = ndvi * 300 + evi * 50
+        logger.warning(f"   Fallback result: {biomass:.2f} tonnes/ha (NDVI={ndvi:.3f}, EVI={evi:.3f})")
         return round(float(np.clip(biomass, 5, 400)), 2)
+    
+    # Model is loaded - verify its contents
+    logger.info("✅ Model data loaded successfully!")
+    logger.info(f"   Model type: {type(model_data)}")
+    logger.info(f"   Model keys: {list(model_data.keys())}")
+    
+    if 'test_r2' in model_data:
+        logger.info(f"   Model R² Score: {model_data['test_r2']:.4f}")
+    if 'test_rmse' in model_data:
+        logger.info(f"   Model RMSE: {model_data['test_rmse']:.2f}")
     
     try:
         # Get feature order from model
         feature_cols = model_data['feature_cols']
+        logger.info(f"   Expected features ({len(feature_cols)}): {feature_cols}")
+        logger.info(f"   Provided features ({len(feature_dict)}): {list(feature_dict.keys())}")
+        
+        # Check if all required features are present
+        missing_features = [col for col in feature_cols if col not in feature_dict]
+        if missing_features:
+            logger.error(f"   ❌ Missing features: {missing_features}")
+            raise ValueError(f"Missing required features: {missing_features}")
         
         # Build feature array in correct order
         X = np.array([[feature_dict[col] for col in feature_cols]])
+        logger.info(f"   Feature array shape: {X.shape}")
+        logger.info(f"   Feature values: {X[0][:5]}... (showing first 5)")
         
         # Apply scaler
         scaler = model_data['scaler']
         X_scaled = scaler.transform(X)
+        logger.info(f"   Scaled features: {X_scaled[0][:5]}... (showing first 5)")
         
         # Predict
         model = model_data['model']
+        model_type = type(model).__name__
+        logger.info(f"   Model type: {model_type}")
+        
         prediction = model.predict(X_scaled)[0]
+        logger.info(f"   Raw prediction: {prediction:.2f} tonnes/ha")
         
         # Clip to reasonable range
         biomass = float(np.clip(prediction, 1, 500))
+        logger.info(f"   Final prediction (clipped): {biomass:.2f} tonnes/ha")
         
-        logger.info(f"Predicted biomass: {biomass:.2f} tonnes/ha (NDVI={feature_dict['ndvi']:.3f})")
+        logger.info(f"✅ USING TRAINED MODEL: {biomass:.2f} tonnes/ha (NDVI={feature_dict['ndvi']:.3f})")
+        logger.info("=" * 60)
         return round(biomass, 2)
         
     except Exception as e:
-        logger.error(f"Error predicting biomass: {e}")
+        logger.error(f"❌ ERROR during model prediction: {type(e).__name__}: {str(e)}")
+        logger.error(f"   Full traceback:", exc_info=True)
+        logger.error("   Falling back to formula-based estimation")
         # Fallback
         ndvi = feature_dict.get('ndvi', 0.5)
         biomass = ndvi * 300
-        return round(float(np.clip(biomass, 5, 400)), 2)
+        result = round(float(np.clip(biomass, 5, 400)), 2)
+        logger.warning(f"   Fallback result: {result:.2f} tonnes/ha")
+        logger.info("=" * 60)
+        return result
 
 
 def estimate_biomass(

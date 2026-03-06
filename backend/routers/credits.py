@@ -35,13 +35,30 @@ async def get_credit_stats():
 @router.get("")
 async def list_credits(status: str = None, min_integrity: float = None):
     db = get_supabase_client()
+    # Get all credits first
     query = db.table("carbon_credits").select("*")
     if status:
         query = query.eq("status", status)
     if min_integrity:
         query = query.gte("integrity_score", min_integrity)
     result = query.order("created_at", desc=True).execute()
-    return result.data
+    
+    # Now fetch plot info for each credit separately
+    credits = []
+    for credit in result.data:
+        credit_data = {**credit}
+        # Try to get plot info if plot_id exists
+        if credit.get("plot_id"):
+            try:
+                plot_result = db.table("land_plots").select("region, name").eq("id", credit["plot_id"]).execute()
+                if plot_result.data:
+                    credit_data["region"] = plot_result.data[0].get("region")
+                    credit_data["plot_name"] = plot_result.data[0].get("name")
+            except Exception:
+                pass  # Continue without plot info
+        credits.append(credit_data)
+    
+    return credits
 
 
 @router.get("/{credit_id}")
@@ -50,7 +67,21 @@ async def get_credit(credit_id: str):
     result = db.table("carbon_credits").select("*").eq("id", credit_id).execute()
     if not result.data:
         raise HTTPException(status_code=404, detail="Credit not found")
-    return result.data[0]
+    
+    credit = result.data[0]
+    credit_data = {**credit}
+    
+    # Try to get plot info if plot_id exists
+    if credit.get("plot_id"):
+        try:
+            plot_result = db.table("land_plots").select("region, name").eq("id", credit["plot_id"]).execute()
+            if plot_result.data:
+                credit_data["region"] = plot_result.data[0].get("region")
+                credit_data["plot_name"] = plot_result.data[0].get("name")
+        except Exception:
+            pass  # Continue without plot info
+    
+    return credit_data
 
 
 @router.post("")
