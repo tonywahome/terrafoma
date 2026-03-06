@@ -249,19 +249,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-<<<<<<< HEAD
-        {/* Results */}
-        <div className="bg-white rounded-xl border shadow-sm p-6">
-          <h2 className="text-xl font-semibold mb-4">Your Footprint</h2>
-          {result ? (
-            <div className="space-y-6">
-              <div className="text-center">
-                <div className="text-5xl font-bold text-terra-600">
-                  {result.annual_tco2e.toFixed(1)}
-                </div>
-                <div className="text-gray-500 mt-1">tCO2e per year</div>
-              </div>
-=======
         {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Global Emissions Trend */}
@@ -302,7 +289,6 @@ export default function DashboardPage() {
               Historical data: IEA CO₂ emissions from fuel combustion (1990-2023)
             </p>
           </div>
->>>>>>> 67992a6 (feat: Add location service, update dashboard with real IEA emissions data, enhance biomass model logging)
 
           {/* Emissions by Sector */}
           <div className="bg-white rounded-xl border shadow-sm p-6">
