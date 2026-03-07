@@ -11,7 +11,8 @@
       "Bash(curl -s http://localhost:8003/openapi.json)",
       "Bash(npm install @polar-sh/sdk)",
       "Bash(node -e \"require\\(''@polar-sh/sdk''\\)\")",
-      "Bash(npx tsc --noEmit)"
+      "Bash(npx tsc --noEmit)",
+      "Bash(curl -s -X POST http://localhost:3000/api/checkout -H \"Content-Type: application/json\" -d '{\"\"creditId\"\":\"\"test-id\"\",\"\"creditName\"\":\"\"Test Credit\"\",\"\"quantity\"\":10.5,\"\"totalPrice\"\":150.00}')"
     ]
   }
 }

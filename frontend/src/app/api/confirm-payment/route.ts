@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const polar = new Polar({
   accessToken: process.env.POLAR_ACCESS_TOKEN,
+  server: (process.env.POLAR_SERVER as "sandbox" | "production") ?? "sandbox",
 });
 
 // Demo buyer ID — replace with real auth user ID once auth is wired in
@@ -18,7 +19,7 @@ export async function GET(req: NextRequest) {
     // Fetch the checkout from Polar to verify payment status and get metadata
     const checkout = await polar.checkouts.get({ id: checkoutId });
 
-    if (checkout.status !== "confirmed") {
+    if (checkout.status !== "confirmed" && checkout.status !== "succeeded") {
       return NextResponse.json(
         { error: `Payment not confirmed. Current status: ${checkout.status}` },
         { status: 402 },

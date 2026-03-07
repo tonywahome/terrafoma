@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const polar = new Polar({
   accessToken: process.env.POLAR_ACCESS_TOKEN,
+  server: (process.env.POLAR_SERVER as "sandbox" | "production") ?? "sandbox",
 });
 
 export async function POST(req: NextRequest) {
