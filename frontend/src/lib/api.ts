@@ -64,12 +64,16 @@ export const api = {
     energy_kwh_monthly: number;
     fuel_litres_monthly: number;
     fuel_type: string;
+    natural_gas_m3_monthly?: number;
+    refrigerant_leaked_kg_annual?: number;
     flights_short_km_annual?: number;
     flights_long_km_annual?: number;
     waste_landfill_kg_monthly?: number;
     waste_recycled_kg_monthly?: number;
     water_m3_monthly?: number;
     freight_tonne_km_monthly?: number;
+    freight_sea_tonne_km_monthly?: number;
+    supply_chain_spend_usd_monthly?: number;
   }) =>
     fetchAPI("/api/dashboard/footprint", {
       method: "POST",

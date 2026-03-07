@@ -36,6 +36,7 @@ class InMemoryDB:
         
         sample_projects = [
             {
+                "id": "aaaaaaaa-0001-0000-0000-000000000000",
                 "plot_name": "Aberdare Forest Conservation",
                 "region": "Nyeri County",
                 "area_ha": 45.3,
@@ -45,6 +46,7 @@ class InMemoryDB:
                 "vintage_year": 2024,
             },
             {
+                "id": "aaaaaaaa-0002-0000-0000-000000000000",
                 "plot_name": "Mount Kenya Woodland",
                 "region": "Meru County",
                 "area_ha": 28.7,
@@ -54,6 +56,7 @@ class InMemoryDB:
                 "vintage_year": 2024,
             },
             {
+                "id": "aaaaaaaa-0003-0000-0000-000000000000",
                 "plot_name": "Kakamega Rainforest",
                 "region": "Kakamega County",
                 "area_ha": 67.2,
@@ -63,6 +66,7 @@ class InMemoryDB:
                 "vintage_year": 2024,
             },
             {
+                "id": "aaaaaaaa-0004-0000-0000-000000000000",
                 "plot_name": "Mau Forest Rehabilitation",
                 "region": "Nakuru County",
                 "area_ha": 52.1,
@@ -72,6 +76,7 @@ class InMemoryDB:
                 "vintage_year": 2024,
             },
             {
+                "id": "aaaaaaaa-0005-0000-0000-000000000000",
                 "plot_name": "Loita Forest Conservation",
                 "region": "Narok County",
                 "area_ha": 38.9,
@@ -81,15 +86,16 @@ class InMemoryDB:
                 "vintage_year": 2024,
             },
         ]
-        
+
         for project in sample_projects:
             biomass_total = project["biomass_tonnes_ha"] * project["area_ha"]
             tco2e = biomass_total * 0.47 * 3.667
             price = calculate_credit_price(project["integrity_score"], project["risk_score"])
-            
+
             credit = {
-                "id": str(uuid.uuid4()),
-                "plot_id": str(uuid.uuid4()),
+                "id": project["id"],
+                "plot_id": project["id"],  # reuse same stable ID
+                "owner_id": "00000000-0000-0000-0000-000000000000",  # demo landowner
                 "plot_name": project["plot_name"],
                 "region": project["region"],
                 "quantity_tco2e": round(tco2e, 2),

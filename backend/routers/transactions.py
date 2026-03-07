@@ -24,7 +24,7 @@ async def create_transaction(tx: TransactionCreate):
         "id": tx_id,
         "credit_id": tx.credit_id,
         "buyer_id": tx.buyer_id,
-        "seller_id": credit_data["owner_id"],
+        "seller_id": credit_data.get("owner_id"),
         "quantity_tco2e": tx.quantity_tco2e,
         "total_price": tx.total_price,
         "currency": tx.currency,

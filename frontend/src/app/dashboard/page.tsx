@@ -87,25 +87,24 @@ export default function DashboardPage() {
 }
 
 function DashboardPageContent() {
-  // Energy inputs
-  const [energyKwh, setEnergyKwh] = useState(5000);
+  // Scope 1 — Direct emissions
   const [fuelLitres, setFuelLitres] = useState(500);
   const [fuelType, setFuelType] = useState("diesel");
-  
-  // Travel inputs
+  const [naturalGas, setNaturalGas] = useState(0);
+  const [refrigerant, setRefrigerant] = useState(0);
+
+  // Scope 2 — Purchased electricity
+  const [energyKwh, setEnergyKwh] = useState(5000);
+
+  // Scope 3 — Value chain
   const [flightsShort, setFlightsShort] = useState(0);
   const [flightsLong, setFlightsLong] = useState(0);
-  
-  // Waste inputs
+  const [freight, setFreight] = useState(0);
+  const [freightSea, setFreightSea] = useState(0);
   const [wasteLandfill, setWasteLandfill] = useState(0);
   const [wasteRecycled, setWasteRecycled] = useState(0);
-  
-  // Water & Freight inputs
   const [water, setWater] = useState(0);
-  const [freight, setFreight] = useState(0);
-  
-  // UI state
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [supplyChainSpend, setSupplyChainSpend] = useState(0);
   const [result, setResult] = useState<FootprintResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [calcError, setCalcError] = useState<string | null>(null);
@@ -149,12 +148,16 @@ function DashboardPageContent() {
         energy_kwh_monthly: energyKwh,
         fuel_litres_monthly: fuelLitres,
         fuel_type: fuelType,
+        natural_gas_m3_monthly: naturalGas,
+        refrigerant_leaked_kg_annual: refrigerant,
         flights_short_km_annual: flightsShort,
         flights_long_km_annual: flightsLong,
         waste_landfill_kg_monthly: wasteLandfill,
         waste_recycled_kg_monthly: wasteRecycled,
         water_m3_monthly: water,
         freight_tonne_km_monthly: freight,
+        freight_sea_tonne_km_monthly: freightSea,
+        supply_chain_spend_usd_monthly: supplyChainSpend,
       })) as FootprintResult;
       setResult(data);
     } catch (err: any) {
@@ -448,177 +451,219 @@ function DashboardPageContent() {
         <div className="grid md:grid-cols-2 gap-8 mb-8">
           {/* Calculator */}
           <div className="bg-white rounded-xl border shadow-sm p-6">
-            <h2 className="text-xl font-semibold mb-4 flex items-center">
+            <h2 className="text-xl font-semibold mb-1 flex items-center">
               <span className="mr-2">🧮</span>
               Carbon Footprint Calculator
             </h2>
-            <div className="space-y-4">
-              {/* Energy Section */}
-              <div className="border-b pb-4">
-                <h3 className="font-semibold text-gray-700 mb-3 flex items-center">
-                  <span className="mr-2">⚡</span>
-                  Energy
-                </h3>
+            <p className="text-xs text-gray-500 mb-5">Based on the GHG Protocol Corporate Standard</p>
+
+            <div className="space-y-5">
+              {/* ── Scope 1 ── */}
+              <div className="rounded-xl border border-orange-200 bg-orange-50/40 p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="bg-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">Scope 1</span>
+                  <span className="text-sm font-semibold text-orange-800">Direct Emissions</span>
+                </div>
                 <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Fuel consumed (litres/month)
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={fuelLitres}
+                        onChange={(e) => setFuelLitres(Number(e.target.value))}
+                        className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                        placeholder="e.g., 500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Fuel type
+                      </label>
+                      <select
+                        value={fuelType}
+                        onChange={(e) => setFuelType(e.target.value)}
+                        className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                      >
+                        <option value="diesel">Diesel</option>
+                        <option value="petrol">Petrol/Gasoline</option>
+                        <option value="lpg">LPG</option>
+                      </select>
+                    </div>
+                  </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Monthly Electricity (kWh)
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Natural gas — heating/process (m³/month)
                     </label>
                     <input
                       type="number"
-                      value={energyKwh}
-                      onChange={(e) => setEnergyKwh(Number(e.target.value))}
-                      className="w-full border-2 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-terra-500 focus:border-terra-500"
-                      placeholder="e.g., 5000"
+                      min={0}
+                      value={naturalGas}
+                      onChange={(e) => setNaturalGas(Number(e.target.value))}
+                      className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                      placeholder="e.g., 200"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Monthly Fuel (litres)
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Refrigerant leaked — R-410A (kg/year)
                     </label>
                     <input
                       type="number"
-                      value={fuelLitres}
-                      onChange={(e) => setFuelLitres(Number(e.target.value))}
-                      className="w-full border-2 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-terra-500 focus:border-terra-500"
-                      placeholder="e.g., 500"
+                      min={0}
+                      value={refrigerant}
+                      onChange={(e) => setRefrigerant(Number(e.target.value))}
+                      className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                      placeholder="e.g., 2"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Fuel Type
-                    </label>
-                    <select
-                      value={fuelType}
-                      onChange={(e) => setFuelType(e.target.value)}
-                      className="w-full border-2 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-terra-500 focus:border-terra-500"
-                    >
-                      <option value="diesel">Diesel</option>
-                      <option value="petrol">Petrol</option>
-                      <option value="natural_gas">Natural Gas</option>
-                      <option value="lpg">LPG</option>
-                    </select>
+                    <p className="text-xs text-gray-400 mt-1">GWP 2088 — check A/C service records</p>
                   </div>
                 </div>
               </div>
 
-              {/* Advanced Options Toggle */}
-              <button
-                onClick={() => setShowAdvanced(!showAdvanced)}
-                className="w-full text-left px-4 py-2 text-sm font-medium text-terra-600 hover:text-terra-700 hover:bg-terra-50 rounded-lg transition-colors flex items-center justify-between"
-              >
-                <span>{showAdvanced ? "Hide" : "Show"} Additional Emission Sources</span>
-                <span>{showAdvanced ? "▼" : "►"}</span>
-              </button>
+              {/* ── Scope 2 ── */}
+              <div className="rounded-xl border border-blue-200 bg-blue-50/40 p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">Scope 2</span>
+                  <span className="text-sm font-semibold text-blue-800">Purchased Energy</span>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Electricity consumed (kWh/month)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={energyKwh}
+                    onChange={(e) => setEnergyKwh(Number(e.target.value))}
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                    placeholder="e.g., 5000"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">Factor: 0.527 kg CO₂e/kWh (Kenya grid)</p>
+                </div>
+              </div>
 
-              {showAdvanced && (
-                <div className="space-y-4 animate-in fade-in duration-300">
-                  {/* Travel Section */}
-                  <div className="border-b pb-4">
-                    <h3 className="font-semibold text-gray-700 mb-3 flex items-center">
-                      <span className="mr-2">✈️</span>
-                      Air Travel (Annual)
-                    </h3>
-                    <div className="space-y-3">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Short Flights (km/year) - &lt; 1500 km
-                        </label>
-                        <input
-                          type="number"
-                          value={flightsShort}
-                          onChange={(e) => setFlightsShort(Number(e.target.value))}
-                          className="w-full border-2 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-terra-500 focus:border-terra-500"
-                          placeholder="e.g., 5000"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">Domestic/regional flights</p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Long Flights (km/year) - &gt; 1500 km
-                        </label>
-                        <input
-                          type="number"
-                          value={flightsLong}
-                          onChange={(e) => setFlightsLong(Number(e.target.value))}
-                          className="w-full border-2 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-terra-500 focus:border-terra-500"
-                          placeholder="e.g., 10000"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">International flights</p>
-                      </div>
+              {/* ── Scope 3 ── */}
+              <div className="rounded-xl border border-purple-200 bg-purple-50/40 p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="bg-purple-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">Scope 3</span>
+                  <span className="text-sm font-semibold text-purple-800">Value Chain</span>
+                </div>
+                <div className="space-y-3">
+                  {/* Flights */}
+                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Business Flights (km/year)</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Short-haul (&lt; 1 500 km)
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={flightsShort}
+                        onChange={(e) => setFlightsShort(Number(e.target.value))}
+                        className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
+                        placeholder="e.g., 5000"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Long-haul (&gt; 1 500 km)
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={flightsLong}
+                        onChange={(e) => setFlightsLong(Number(e.target.value))}
+                        className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
+                        placeholder="e.g., 10000"
+                      />
                     </div>
                   </div>
 
-                  {/* Waste Section */}
-                  <div className="border-b pb-4">
-                    <h3 className="font-semibold text-gray-700 mb-3 flex items-center">
-                      <span className="mr-2">🗑️</span>
-                      Waste (Monthly)
-                    </h3>
-                    <div className="space-y-3">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Landfill Waste (kg/month)
-                        </label>
-                        <input
-                          type="number"
-                          value={wasteLandfill}
-                          onChange={(e) => setWasteLandfill(Number(e.target.value))}
-                          className="w-full border-2 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-terra-500 focus:border-terra-500"
-                          placeholder="e.g., 500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Recycled Waste (kg/month)
-                        </label>
-                        <input
-                          type="number"
-                          value={wasteRecycled}
-                          onChange={(e) => setWasteRecycled(Number(e.target.value))}
-                          className="w-full border-2 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-terra-500 focus:border-terra-500"
-                          placeholder="e.g., 200"
-                        />
-                      </div>
+                  {/* Freight */}
+                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mt-1">Freight (tonne-km/month)</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Road / truck
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={freight}
+                        onChange={(e) => setFreight(Number(e.target.value))}
+                        className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
+                        placeholder="e.g., 1000"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Sea / container ship
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={freightSea}
+                        onChange={(e) => setFreightSea(Number(e.target.value))}
+                        className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
+                        placeholder="e.g., 5000"
+                      />
                     </div>
                   </div>
 
-                  {/* Water & Freight Section */}
-                  <div className="pb-2">
-                    <h3 className="font-semibold text-gray-700 mb-3 flex items-center">
-                      <span className="mr-2">💧</span>
-                      Other Sources (Monthly)
-                    </h3>
-                    <div className="space-y-3">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Water Usage (m³/month)
-                        </label>
-                        <input
-                          type="number"
-                          value={water}
-                          onChange={(e) => setWater(Number(e.target.value))}
-                          className="w-full border-2 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-terra-500 focus:border-terra-500"
-                          placeholder="e.g., 100"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Freight (tonne-km/month)
-                        </label>
-                        <input
-                          type="number"
-                          value={freight}
-                          onChange={(e) => setFreight(Number(e.target.value))}
-                          className="w-full border-2 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-terra-500 focus:border-terra-500"
-                          placeholder="e.g., 1000"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">Road/truck freight shipping</p>
-                      </div>
+                  {/* Waste */}
+                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mt-1">Waste generated (kg/month)</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Landfill
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={wasteLandfill}
+                        onChange={(e) => setWasteLandfill(Number(e.target.value))}
+                        className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
+                        placeholder="e.g., 500"
+                      />
                     </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Recycled
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={wasteRecycled}
+                        onChange={(e) => setWasteRecycled(Number(e.target.value))}
+                        className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
+                        placeholder="e.g., 200"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Supply chain spend */}
+                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mt-1">Supply Chain</p>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Spend on goods &amp; services (USD/month)
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={supplyChainSpend}
+                      onChange={(e) => setSupplyChainSpend(Number(e.target.value))}
+                      className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
+                      placeholder="e.g., 10000"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">Spend-based: 0.308 kg CO₂e per USD (EPA USEEIO)</p>
                   </div>
                 </div>
-              )}
+              </div>
 
               <button
                 onClick={handleCalculate}
@@ -643,81 +688,77 @@ function DashboardPageContent() {
               Your Carbon Footprint
             </h2>
             {result ? (
-              <div className="space-y-6">
+              <div className="space-y-5">
+                {/* Total */}
                 <div className="text-center bg-gradient-to-br from-terra-50 to-green-50 rounded-xl p-6 border-2 border-terra-200">
-                  <p className="text-sm text-gray-600 mb-2">Annual Emissions</p>
+                  <p className="text-sm text-gray-600 mb-1">Total Annual Emissions</p>
                   <div className="text-5xl font-bold text-terra-600">
                     {result.annual_tco2e.toFixed(1)}
                   </div>
-                  <div className="text-gray-600 mt-1 font-medium">
-                    tCO₂e per year
+                  <div className="text-gray-600 mt-1 font-medium">tCO₂e per year</div>
+                  <div className="text-xs text-gray-400 mt-1">
+                    ({result.monthly_tco2e.toFixed(2)} tCO₂e / month)
                   </div>
                 </div>
 
-                {/* Breakdown by Source */}
+                {/* Scope summary cards */}
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-center">
+                    <div className="text-xs font-bold text-orange-600 mb-1">Scope 1</div>
+                    <div className="text-xl font-bold text-orange-800">{result.scope1_tco2e.toFixed(1)}</div>
+                    <div className="text-xs text-orange-500">tCO₂e</div>
+                  </div>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
+                    <div className="text-xs font-bold text-blue-600 mb-1">Scope 2</div>
+                    <div className="text-xl font-bold text-blue-800">{result.scope2_tco2e.toFixed(1)}</div>
+                    <div className="text-xs text-blue-500">tCO₂e</div>
+                  </div>
+                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-center">
+                    <div className="text-xs font-bold text-purple-600 mb-1">Scope 3</div>
+                    <div className="text-xl font-bold text-purple-800">{result.scope3_tco2e.toFixed(1)}</div>
+                    <div className="text-xs text-purple-500">tCO₂e</div>
+                  </div>
+                </div>
+
+                {/* Detailed source breakdown */}
                 <div>
-                  <h3 className="font-semibold text-gray-700 mb-3">Emissions Breakdown</h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    {result.electricity_tco2e > 0 && (
-                      <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                        <div className="text-xs text-blue-700 font-medium mb-1">⚡ Electricity</div>
-                        <div className="text-lg font-bold text-blue-900">
-                          {result.electricity_tco2e.toFixed(1)}
-                        </div>
-                        <div className="text-xs text-blue-600">tCO₂e</div>
-                      </div>
-                    )}
-                    {result.fuel_tco2e > 0 && (
-                      <div className="bg-amber-50 rounded-lg p-3 border border-amber-200">
-                        <div className="text-xs text-amber-700 font-medium mb-1">⛽ Fuel</div>
-                        <div className="text-lg font-bold text-amber-900">
-                          {result.fuel_tco2e.toFixed(1)}
-                        </div>
-                        <div className="text-xs text-amber-600">tCO₂e</div>
-                      </div>
-                    )}
-                    {result.flights_tco2e > 0 && (
-                      <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
-                        <div className="text-xs text-purple-700 font-medium mb-1">✈️ Flights</div>
-                        <div className="text-lg font-bold text-purple-900">
-                          {result.flights_tco2e.toFixed(1)}
-                        </div>
-                        <div className="text-xs text-purple-600">tCO₂e</div>
-                      </div>
-                    )}
-                    {result.waste_tco2e > 0 && (
-                      <div className="bg-red-50 rounded-lg p-3 border border-red-200">
-                        <div className="text-xs text-red-700 font-medium mb-1">🗑️ Waste</div>
-                        <div className="text-lg font-bold text-red-900">
-                          {result.waste_tco2e.toFixed(1)}
-                        </div>
-                        <div className="text-xs text-red-600">tCO₂e</div>
-                      </div>
-                    )}
-                    {result.water_tco2e > 0 && (
-                      <div className="bg-cyan-50 rounded-lg p-3 border border-cyan-200">
-                        <div className="text-xs text-cyan-700 font-medium mb-1">💧 Water</div>
-                        <div className="text-lg font-bold text-cyan-900">
-                          {result.water_tco2e.toFixed(1)}
-                        </div>
-                        <div className="text-xs text-cyan-600">tCO₂e</div>
-                      </div>
-                    )}
-                    {result.freight_tco2e > 0 && (
-                      <div className="bg-orange-50 rounded-lg p-3 border border-orange-200">
-                        <div className="text-xs text-orange-700 font-medium mb-1">🚚 Freight</div>
-                        <div className="text-lg font-bold text-orange-900">
-                          {result.freight_tco2e.toFixed(1)}
-                        </div>
-                        <div className="text-xs text-orange-600">tCO₂e</div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="bg-terra-50 rounded-lg p-4 border border-terra-200 text-center">
-                  <div className="text-lg font-semibold text-terra-700">
-                    Monthly: {result.monthly_tco2e.toFixed(2)} tCO₂e
+                  <h3 className="text-sm font-semibold text-gray-700 mb-2">Source Breakdown</h3>
+                  <div className="space-y-1.5">
+                    {[
+                      { label: "⚡ Electricity", value: result.electricity_tco2e, scope: 2 },
+                      { label: "⛽ Fuel combustion", value: result.fuel_tco2e, scope: 1 },
+                      { label: "🔥 Natural gas", value: result.natural_gas_tco2e, scope: 1 },
+                      { label: "❄️ Refrigerants", value: result.refrigerant_tco2e, scope: 1 },
+                      { label: "✈️ Business flights", value: result.flights_tco2e, scope: 3 },
+                      { label: "🚚 Road freight", value: result.freight_tco2e, scope: 3 },
+                      { label: "🚢 Sea freight", value: result.freight_sea_tco2e, scope: 3 },
+                      { label: "🗑️ Waste", value: result.waste_tco2e, scope: 3 },
+                      { label: "💧 Water", value: result.water_tco2e, scope: 3 },
+                      { label: "🏭 Supply chain", value: result.supply_chain_tco2e, scope: 3 },
+                    ]
+                      .filter((row) => row.value > 0)
+                      .map((row) => {
+                        const pct = result.annual_tco2e > 0 ? (row.value / result.annual_tco2e) * 100 : 0;
+                        const barColor =
+                          row.scope === 1 ? "bg-orange-400" : row.scope === 2 ? "bg-blue-400" : "bg-purple-400";
+                        return (
+                          <div key={row.label}>
+                            <div className="flex justify-between text-xs mb-0.5">
+                              <span className="text-gray-700">{row.label}</span>
+                              <span className="font-semibold text-gray-800">
+                                {row.value.toFixed(2)} t &nbsp;
+                                <span className="text-gray-400">({pct.toFixed(0)}%)</span>
+                              </span>
+                            </div>
+                            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full ${barColor}`}
+                                style={{ width: `${Math.min(pct, 100)}%` }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
                   </div>
                 </div>
 
@@ -733,7 +774,7 @@ function DashboardPageContent() {
                 <div className="text-6xl mb-4">🌱</div>
                 <p className="text-lg">Calculate your carbon footprint</p>
                 <p className="text-sm mt-2">
-                  Enter your consumption data and click calculate to get started
+                  Fill in the Scope 1, 2, and 3 fields and click Calculate
                 </p>
               </div>
             )}

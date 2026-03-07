@@ -1,20 +1,37 @@
 EMISSION_FACTORS = {
-    "electricity_kwh": 0.000527,  # tCO2e per kWh (Kenya grid average)
-    "diesel_litre": 0.002676,
-    "petrol_litre": 0.002315,
-    "natural_gas_m3": 0.002020,
-    "lpg_kg": 0.002983,
-    # Transportation
-    "flight_km_short": 0.000255,  # tCO2e per km (flights < 1500 km)
-    "flight_km_long": 0.000195,  # tCO2e per km (flights > 1500 km)
-    # Waste
-    "waste_landfill_kg": 0.000465,  # tCO2e per kg to landfill
-    "waste_recycled_kg": 0.000021,  # tCO2e per kg recycled
-    # Water
-    "water_m3": 0.000344,  # tCO2e per m³ (treatment + supply)
-    # Shipping/Freight
-    "freight_truck_tonne_km": 0.000062,  # tCO2e per tonne-km
-    "freight_ship_tonne_km": 0.000011,  # tCO2e per tonne-km
+    # --- Scope 2: Purchased electricity ---
+    "electricity_kwh": 0.000527,   # tCO2e per kWh (Kenya grid average, IPCC/IEA)
+
+    # --- Scope 1: Direct fuel combustion ---
+    "diesel_litre": 0.002676,      # tCO2e per litre (IPCC 2006 Tier 1)
+    "petrol_litre": 0.002315,      # tCO2e per litre
+    "natural_gas_litre": 0.002020, # kept for fuel_type=natural_gas compat
+    "lpg_kg": 0.002983,            # tCO2e per kg
+
+    # --- Scope 1: Natural gas heating (dedicated field) ---
+    "natural_gas_heating_m3": 0.002020,  # tCO2e per m³ (IPCC 2006, ~2.02 kg CO2e/m³)
+
+    # --- Scope 1: Refrigerant leakage ---
+    # Default: R-410A (GWP=2088, most common commercial HVAC refrigerant)
+    "refrigerant_r410a_kg": 2.088,       # tCO2e per kg leaked
+
+    # --- Scope 3: Business air travel ---
+    "flight_km_short": 0.000255,   # tCO2e per km (< 1500 km, economy class, DEFRA 2023)
+    "flight_km_long": 0.000195,    # tCO2e per km (> 1500 km, with radiative forcing)
+
+    # --- Scope 3: Waste ---
+    "waste_landfill_kg": 0.000465, # tCO2e per kg to landfill (DEFRA 2023)
+    "waste_recycled_kg": 0.000021, # tCO2e per kg recycled
+
+    # --- Scope 3: Water ---
+    "water_m3": 0.000344,          # tCO2e per m³ (treatment + supply)
+
+    # --- Scope 3: Freight ---
+    "freight_truck_tonne_km": 0.000062,  # tCO2e per tonne-km (road, average truck)
+    "freight_ship_tonne_km": 0.000011,   # tCO2e per tonne-km (container ship, DEFRA)
+
+    # --- Scope 3: Supply chain (spend-based, USEEIO average) ---
+    "supply_chain_spend_usd": 0.000308,  # tCO2e per USD spent (EPA USEEIO industry avg)
 }
 
 # Carbon Credit Pricing (USD per tonne CO2e)
@@ -29,68 +46,108 @@ COMMUNITY_BENEFIT_PERCENTAGE = 0.60  # 60% goes directly to communities
 
 
 def calculate_footprint(
+    # Scope 2
     energy_kwh_monthly: float = 0,
+    # Scope 1 - fuel combustion
     fuel_litres_monthly: float = 0,
     fuel_type: str = "diesel",
+    # Scope 1 - natural gas heating
+    natural_gas_m3_monthly: float = 0,
+    # Scope 1 - refrigerant leakage
+    refrigerant_leaked_kg_annual: float = 0,
+    # Scope 3 - flights
     flights_short_km_annual: float = 0,
     flights_long_km_annual: float = 0,
+    # Scope 3 - waste
     waste_landfill_kg_monthly: float = 0,
     waste_recycled_kg_monthly: float = 0,
+    # Scope 3 - water
     water_m3_monthly: float = 0,
+    # Scope 3 - freight
     freight_tonne_km_monthly: float = 0,
+    freight_sea_tonne_km_monthly: float = 0,
+    # Scope 3 - supply chain (spend-based)
+    supply_chain_spend_usd_monthly: float = 0,
 ) -> dict:
-    """Calculate carbon footprint from multiple sources."""
-    # Energy
+    """Calculate carbon footprint from multiple sources, structured by GHG Protocol scopes."""
+
+    # --- Scope 2: Purchased electricity ---
     electricity_emissions = energy_kwh_monthly * 12 * EMISSION_FACTORS["electricity_kwh"]
-    
-    # Fuel
+
+    # --- Scope 1: Fuel combustion ---
     fuel_key = f"{fuel_type}_litre"
     fuel_factor = EMISSION_FACTORS.get(fuel_key, EMISSION_FACTORS["diesel_litre"])
     fuel_emissions = fuel_litres_monthly * 12 * fuel_factor
-    
-    # Flights (annual input)
-    flight_short_emissions = flights_short_km_annual * EMISSION_FACTORS["flight_km_short"]
-    flight_long_emissions = flights_long_km_annual * EMISSION_FACTORS["flight_km_long"]
-    flights_emissions = flight_short_emissions + flight_long_emissions
-    
-    # Waste (monthly)
-    waste_landfill_emissions = waste_landfill_kg_monthly * 12 * EMISSION_FACTORS["waste_landfill_kg"]
-    waste_recycled_emissions = waste_recycled_kg_monthly * 12 * EMISSION_FACTORS["waste_recycled_kg"]
-    waste_emissions = waste_landfill_emissions + waste_recycled_emissions
-    
-    # Water (monthly)
-    water_emissions = water_m3_monthly * 12 * EMISSION_FACTORS["water_m3"]
-    
-    # Freight (monthly)
-    freight_emissions = freight_tonne_km_monthly * 12 * EMISSION_FACTORS["freight_truck_tonne_km"]
-    
-    # Total
-    total = (
-        electricity_emissions + 
-        fuel_emissions + 
-        flights_emissions + 
-        waste_emissions + 
-        water_emissions + 
-        freight_emissions
+
+    # --- Scope 1: Natural gas heating ---
+    natural_gas_emissions = natural_gas_m3_monthly * 12 * EMISSION_FACTORS["natural_gas_heating_m3"]
+
+    # --- Scope 1: Refrigerant leakage (annual input) ---
+    refrigerant_emissions = refrigerant_leaked_kg_annual * EMISSION_FACTORS["refrigerant_r410a_kg"]
+
+    # --- Scope 3: Business flights (annual input) ---
+    flights_emissions = (
+        flights_short_km_annual * EMISSION_FACTORS["flight_km_short"]
+        + flights_long_km_annual * EMISSION_FACTORS["flight_km_long"]
     )
-    
+
+    # --- Scope 3: Waste ---
+    waste_emissions = (
+        waste_landfill_kg_monthly * 12 * EMISSION_FACTORS["waste_landfill_kg"]
+        + waste_recycled_kg_monthly * 12 * EMISSION_FACTORS["waste_recycled_kg"]
+    )
+
+    # --- Scope 3: Water ---
+    water_emissions = water_m3_monthly * 12 * EMISSION_FACTORS["water_m3"]
+
+    # --- Scope 3: Road freight ---
+    freight_road_emissions = freight_tonne_km_monthly * 12 * EMISSION_FACTORS["freight_truck_tonne_km"]
+
+    # --- Scope 3: Sea freight ---
+    freight_sea_emissions = freight_sea_tonne_km_monthly * 12 * EMISSION_FACTORS["freight_ship_tonne_km"]
+
+    # --- Scope 3: Supply chain spend-based ---
+    supply_chain_emissions = supply_chain_spend_usd_monthly * 12 * EMISSION_FACTORS["supply_chain_spend_usd"]
+
+    # Scope aggregates
+    scope1_total = fuel_emissions + natural_gas_emissions + refrigerant_emissions
+    scope2_total = electricity_emissions
+    scope3_total = (
+        flights_emissions + waste_emissions + water_emissions
+        + freight_road_emissions + freight_sea_emissions + supply_chain_emissions
+    )
+    total = scope1_total + scope2_total + scope3_total
+
     return {
         "annual_tco2e": round(total, 2),
+        "monthly_tco2e": round(total / 12, 2),
+        # Scope totals
+        "scope1_tco2e": round(scope1_total, 2),
+        "scope2_tco2e": round(scope2_total, 2),
+        "scope3_tco2e": round(scope3_total, 2),
+        # Individual sources
         "electricity_tco2e": round(electricity_emissions, 2),
         "fuel_tco2e": round(fuel_emissions, 2),
+        "natural_gas_tco2e": round(natural_gas_emissions, 2),
+        "refrigerant_tco2e": round(refrigerant_emissions, 2),
         "flights_tco2e": round(flights_emissions, 2),
         "waste_tco2e": round(waste_emissions, 2),
         "water_tco2e": round(water_emissions, 2),
-        "freight_tco2e": round(freight_emissions, 2),
-        "monthly_tco2e": round(total / 12, 2),
+        "freight_tco2e": round(freight_road_emissions, 2),
+        "freight_sea_tco2e": round(freight_sea_emissions, 2),
+        "supply_chain_tco2e": round(supply_chain_emissions, 2),
         "breakdown": {
             "electricity": round(electricity_emissions, 2),
             "fuel": round(fuel_emissions, 2),
+            "natural_gas": round(natural_gas_emissions, 2),
+            "refrigerant": round(refrigerant_emissions, 2),
             "flights": round(flights_emissions, 2),
             "waste": round(waste_emissions, 2),
             "water": round(water_emissions, 2),
-            "freight": round(freight_emissions, 2),
-        }
+            "freight_road": round(freight_road_emissions, 2),
+            "freight_sea": round(freight_sea_emissions, 2),
+            "supply_chain": round(supply_chain_emissions, 2),
+        },
     }
 
 

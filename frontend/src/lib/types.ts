@@ -57,20 +57,33 @@ export interface Transaction {
 
 export interface FootprintResult {
   annual_tco2e: number;
+  monthly_tco2e: number;
+  // GHG Protocol scope totals
+  scope1_tco2e: number;
+  scope2_tco2e: number;
+  scope3_tco2e: number;
+  // Individual sources
   electricity_tco2e: number;
   fuel_tco2e: number;
+  natural_gas_tco2e: number;
+  refrigerant_tco2e: number;
   flights_tco2e: number;
   waste_tco2e: number;
   water_tco2e: number;
   freight_tco2e: number;
-  monthly_tco2e: number;
+  freight_sea_tco2e: number;
+  supply_chain_tco2e: number;
   breakdown: {
     electricity: number;
     fuel: number;
+    natural_gas: number;
+    refrigerant: number;
     flights: number;
     waste: number;
     water: number;
-    freight: number;
+    freight_road: number;
+    freight_sea: number;
+    supply_chain: number;
   };
 }
 

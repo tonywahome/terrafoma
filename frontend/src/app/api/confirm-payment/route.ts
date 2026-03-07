@@ -56,11 +56,28 @@ export async function GET(req: NextRequest) {
 
     if (!txRes.ok) {
       const err = await txRes.json().catch(() => ({}));
-      // If credit is already sold (e.g. webhook already processed it), look up the existing transaction
+      // If credit is already sold (idempotency — e.g. page refresh or webhook race),
+      // look up the existing transaction for this buyer+credit and return success.
       if (
         txRes.status === 400 &&
         String(err.detail).includes("not available")
       ) {
+        const existingRes = await fetch(
+          `${apiUrl}/api/transactions/buyer/${DEMO_BUYER_ID}`,
+        ).catch(() => null);
+        if (existingRes?.ok) {
+          const existing: any[] = await existingRes.json().catch(() => []);
+          const match = existing.find((t: any) => t.credit_id === creditId);
+          if (match) {
+            return NextResponse.json({
+              transactionId: match.id,
+              creditId,
+              creditName,
+              quantityTco2e,
+              totalPrice,
+            });
+          }
+        }
         return NextResponse.json(
           { error: "This credit has already been purchased." },
           { status: 409 },
