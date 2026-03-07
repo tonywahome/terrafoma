@@ -475,6 +475,7 @@ function DashboardPageContent() {
                         min={0}
                         value={fuelLitres}
                         onChange={(e) => setFuelLitres(Number(e.target.value))}
+                        onFocus={(e) => e.target.select()}
                         className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
                         placeholder="e.g., 500"
                       />
@@ -503,6 +504,7 @@ function DashboardPageContent() {
                       min={0}
                       value={naturalGas}
                       onChange={(e) => setNaturalGas(Number(e.target.value))}
+                      onFocus={(e) => e.target.select()}
                       className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
                       placeholder="e.g., 200"
                     />
@@ -516,6 +518,7 @@ function DashboardPageContent() {
                       min={0}
                       value={refrigerant}
                       onChange={(e) => setRefrigerant(Number(e.target.value))}
+                      onFocus={(e) => e.target.select()}
                       className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
                       placeholder="e.g., 2"
                     />
@@ -539,6 +542,7 @@ function DashboardPageContent() {
                     min={0}
                     value={energyKwh}
                     onChange={(e) => setEnergyKwh(Number(e.target.value))}
+                    onFocus={(e) => e.target.select()}
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
                     placeholder="e.g., 5000"
                   />
@@ -565,6 +569,7 @@ function DashboardPageContent() {
                         min={0}
                         value={flightsShort}
                         onChange={(e) => setFlightsShort(Number(e.target.value))}
+                        onFocus={(e) => e.target.select()}
                         className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
                         placeholder="e.g., 5000"
                       />
@@ -578,6 +583,7 @@ function DashboardPageContent() {
                         min={0}
                         value={flightsLong}
                         onChange={(e) => setFlightsLong(Number(e.target.value))}
+                        onFocus={(e) => e.target.select()}
                         className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
                         placeholder="e.g., 10000"
                       />
@@ -596,6 +602,7 @@ function DashboardPageContent() {
                         min={0}
                         value={freight}
                         onChange={(e) => setFreight(Number(e.target.value))}
+                        onFocus={(e) => e.target.select()}
                         className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
                         placeholder="e.g., 1000"
                       />
@@ -609,6 +616,7 @@ function DashboardPageContent() {
                         min={0}
                         value={freightSea}
                         onChange={(e) => setFreightSea(Number(e.target.value))}
+                        onFocus={(e) => e.target.select()}
                         className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
                         placeholder="e.g., 5000"
                       />
@@ -627,6 +635,7 @@ function DashboardPageContent() {
                         min={0}
                         value={wasteLandfill}
                         onChange={(e) => setWasteLandfill(Number(e.target.value))}
+                        onFocus={(e) => e.target.select()}
                         className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
                         placeholder="e.g., 500"
                       />
@@ -640,6 +649,7 @@ function DashboardPageContent() {
                         min={0}
                         value={wasteRecycled}
                         onChange={(e) => setWasteRecycled(Number(e.target.value))}
+                        onFocus={(e) => e.target.select()}
                         className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
                         placeholder="e.g., 200"
                       />
@@ -657,6 +667,7 @@ function DashboardPageContent() {
                       min={0}
                       value={supplyChainSpend}
                       onChange={(e) => setSupplyChainSpend(Number(e.target.value))}
+                      onFocus={(e) => e.target.select()}
                       className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
                       placeholder="e.g., 10000"
                     />
@@ -705,17 +716,17 @@ function DashboardPageContent() {
                 <div className="grid grid-cols-3 gap-2">
                   <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-center">
                     <div className="text-xs font-bold text-orange-600 mb-1">Scope 1</div>
-                    <div className="text-xl font-bold text-orange-800">{result.scope1_tco2e.toFixed(1)}</div>
+                    <div className="text-xl font-bold text-orange-800">{(result.scope1_tco2e ?? 0).toFixed(1)}</div>
                     <div className="text-xs text-orange-500">tCO₂e</div>
                   </div>
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
                     <div className="text-xs font-bold text-blue-600 mb-1">Scope 2</div>
-                    <div className="text-xl font-bold text-blue-800">{result.scope2_tco2e.toFixed(1)}</div>
+                    <div className="text-xl font-bold text-blue-800">{(result.scope2_tco2e ?? 0).toFixed(1)}</div>
                     <div className="text-xs text-blue-500">tCO₂e</div>
                   </div>
                   <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-center">
                     <div className="text-xs font-bold text-purple-600 mb-1">Scope 3</div>
-                    <div className="text-xl font-bold text-purple-800">{result.scope3_tco2e.toFixed(1)}</div>
+                    <div className="text-xl font-bold text-purple-800">{(result.scope3_tco2e ?? 0).toFixed(1)}</div>
                     <div className="text-xs text-purple-500">tCO₂e</div>
                   </div>
                 </div>

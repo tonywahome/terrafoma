@@ -511,7 +511,7 @@ export default function MarketplacePage() {
             </h3>
             <p className="text-sm text-gray-600">
               Nature-based carbon sequestration from verified forest
-              conservation and restoration projects across Kenya.
+              conservation and restoration projects across Africa.
             </p>
           </div>
         </div>
