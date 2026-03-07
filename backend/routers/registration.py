@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Optional, List, Dict, Any
 import logging
 from datetime import datetime
 from database import get_admin_client
@@ -8,12 +8,19 @@ from database import get_admin_client
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/registration", tags=["registration"])
 
+class Coordinates(BaseModel):
+    lat: float
+    lon: float
+
 class RegistrationRequest(BaseModel):
     owner_name: str
     owner_email: EmailStr
     land_location: str
     land_size: str
     land_type: str
+    coordinates: Optional[Coordinates] = None  # Center point of land
+    boundaries: Optional[List[List[float]]] = None  # Array of [lat, lon] points forming polygon
+    geometry: Optional[Dict[str, Any]] = None  # GeoJSON geometry from Mapbox
     additional_info: Optional[str] = None
 
 @router.post("/request")
@@ -22,6 +29,19 @@ async def submit_registration_request(data: RegistrationRequest, background_task
     try:
         db = get_admin_client()
         
+        # Prepare coordinates and boundaries for storage
+        coords_json = None
+        if data.coordinates:
+            coords_json = {"lat": data.coordinates.lat, "lon": data.coordinates.lon}
+        
+        boundaries_json = None
+        if data.boundaries:
+            boundaries_json = data.boundaries
+        
+        geometry_json = None
+        if data.geometry:
+            geometry_json = data.geometry
+        
         # Store request in database
         request_data = {
             "owner_name": data.owner_name,
@@ -29,6 +49,9 @@ async def submit_registration_request(data: RegistrationRequest, background_task
             "land_location": data.land_location,
             "land_size": data.land_size,
             "land_type": data.land_type,
+            "coordinates": coords_json,
+            "boundaries": boundaries_json,
+            "geometry": geometry_json,
             "additional_info": data.additional_info,
             "status": "pending",
             "created_at": datetime.now().isoformat(),
@@ -53,7 +76,7 @@ async def submit_registration_request(data: RegistrationRequest, background_task
             data.additional_info
         )
         
-        logger.info(f"Registration request submitted by {data.owner_name} ({data.owner_email})")
+        logger.info(f"Registration request submitted by {data.owner_name} ({data.owner_email}) with coordinates")
         
         return {
             "message": "Registration request submitted successfully",

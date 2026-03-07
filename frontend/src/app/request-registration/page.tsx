@@ -1,20 +1,115 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import mapboxgl from "mapbox-gl";
+import MapboxDraw from "@mapbox/mapbox-gl-draw";
+import "mapbox-gl/dist/mapbox-gl.css";
+import "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css";
 
 function RequestRegistrationContent() {
   const { user } = useAuth();
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const map = useRef<mapboxgl.Map | null>(null);
+  const draw = useRef<MapboxDraw | null>(null);
+
   const [formData, setFormData] = useState({
     landLocation: "",
     landSize: "",
     landType: "forest",
     additionalInfo: "",
   });
+  const [drawnGeometry, setDrawnGeometry] = useState<any>(null);
+  const [area, setArea] = useState<number>(0);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+
+  // Initialize Mapbox
+  useEffect(() => {
+    if (map.current) return;
+    if (!mapContainer.current) return;
+
+    const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
+    if (!mapboxToken) {
+      console.error("Mapbox token not found");
+      return;
+    }
+
+    mapboxgl.accessToken = mapboxToken;
+
+    try {
+      const mapInstance = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: "mapbox://styles/mapbox/satellite-streets-v12",
+        center: [36.8, -0.4], // Kenya
+        zoom: 10,
+      });
+
+      map.current = mapInstance;
+
+      const drawInstance = new MapboxDraw({
+        displayControlsDefault: false,
+        controls: {
+          polygon: true,
+          trash: true,
+        },
+        defaultMode: "simple_select",
+      });
+
+      draw.current = drawInstance;
+
+      mapInstance.addControl(drawInstance);
+      mapInstance.addControl(new mapboxgl.NavigationControl(), "top-right");
+
+      mapInstance.on("draw.create", updateArea);
+      mapInstance.on("draw.delete", updateArea);
+      mapInstance.on("draw.update", updateArea);
+
+      mapInstance.on("load", () => {
+        console.log("Map loaded successfully!");
+      });
+    } catch (error) {
+      console.error("Failed to initialize Mapbox:", error);
+    }
+
+    return () => {
+      if (map.current) {
+        map.current.remove();
+        map.current = null;
+      }
+    };
+  }, []);
+
+  function updateArea() {
+    const data = draw.current?.getAll();
+    if (data && data.features.length > 0) {
+      const feature = data.features[0];
+      setDrawnGeometry(feature.geometry);
+
+      if (feature.geometry.type === "Polygon") {
+        const coords = (feature.geometry as any).coordinates[0];
+        const areaHa = calculatePolygonArea(coords);
+        setArea(areaHa);
+        setFormData({ ...formData, landSize: areaHa.toFixed(2) });
+      }
+    } else {
+      setDrawnGeometry(null);
+      setArea(0);
+    }
+  }
+
+  function calculatePolygonArea(coords: number[][]): number {
+    let area = 0;
+    for (let i = 0; i < coords.length - 1; i++) {
+      const [x1, y1] = coords[i];
+      const [x2, y2] = coords[i + 1];
+      area += x1 * y2 - x2 * y1;
+    }
+    area = Math.abs(area / 2);
+    return area * 111 * 111 * 100; // Convert to hectares
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,6 +129,7 @@ function RequestRegistrationContent() {
             land_size: formData.landSize,
             land_type: formData.landType,
             additional_info: formData.additionalInfo,
+            geometry: drawnGeometry, // Include the drawn polygon
           }),
         }
       );
@@ -49,6 +145,12 @@ function RequestRegistrationContent() {
         landType: "forest",
         additionalInfo: "",
       });
+      setDrawnGeometry(null);
+      setArea(0);
+      // Clear the drawn polygon
+      if (draw.current) {
+        draw.current.deleteAll();
+      }
     } catch (err: any) {
       setError(err.message || "Failed to submit request. Please try again.");
     } finally {
@@ -116,6 +218,30 @@ function RequestRegistrationContent() {
                 </div>
               )}
 
+              {/* Map Section */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Draw Your Land Boundary <span className="text-red-500">*</span>
+                </label>
+                <div className="border-2 border-gray-300 rounded-lg overflow-hidden">
+                  <div
+                    ref={mapContainer}
+                    className="w-full"
+                    style={{ height: "400px" }}
+                  />
+                </div>
+                <div className="mt-2 flex items-center justify-between text-sm">
+                  <p className="text-gray-500">
+                    Click the polygon tool on the map to draw your land boundary
+                  </p>
+                  {drawnGeometry && (
+                    <span className="text-green-600 font-medium">
+                      ✓ Area: {area.toFixed(2)} hectares
+                    </span>
+                  )}
+                </div>
+              </div>
+
               {/* Owner Info (readonly) */}
               <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">
@@ -175,12 +301,18 @@ function RequestRegistrationContent() {
                   step="0.01"
                   required
                   value={formData.landSize}
+                  readOnly={!!drawnGeometry}
                   onChange={(e) =>
                     setFormData({ ...formData, landSize: e.target.value })
                   }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-terra-500 focus:border-transparent"
-                  placeholder="e.g., 25.5"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-terra-500 focus:border-transparent disabled:bg-gray-100"
+                  placeholder="e.g., 25.5 (or draw on map)"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  {drawnGeometry
+                    ? "Auto-calculated from drawn boundary"
+                    : "Enter manually or draw on the map above"}
+                </p>
               </div>
 
               {/* Land Type */}

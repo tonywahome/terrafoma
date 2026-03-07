@@ -12,6 +12,7 @@ interface RegistrationRequest {
   land_size: string;
   land_type: string;
   additional_info?: string;
+  geometry?: any; // GeoJSON geometry
   status: "pending" | "approved" | "rejected";
   created_at: string;
   processed_at?: string;
@@ -25,6 +26,25 @@ export default function AdminRegistrationsPage() {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
   const [selectedRequest, setSelectedRequest] = useState<RegistrationRequest | null>(null);
+
+  const handleScanWithGeometry = (request: RegistrationRequest) => {
+    if (request.geometry) {
+      // Store geometry and request info in localStorage for the scan page
+      localStorage.setItem("scanGeometry", JSON.stringify(request.geometry));
+      localStorage.setItem("scanRequestId", request.id);
+      localStorage.setItem("scanOwnerInfo", JSON.stringify({
+        name: request.owner_name,
+        email: request.owner_email,
+        location: request.land_location,
+        size: request.land_size,
+        type: request.land_type,
+      }));
+      // Navigate to scan page
+      window.location.href = "/scan";
+    } else {
+      alert("This registration doesn't have geometry data. Please use manual scanning.");
+    }
+  };
 
   useEffect(() => {
     fetchRequests();
@@ -243,12 +263,23 @@ export default function AdminRegistrationsPage() {
                                 View Details
                               </button>
                               {request.status === "pending" && (
-                                <Link
-                                  href="/scan"
-                                  className="text-blue-600 hover:text-blue-700 font-medium"
-                                >
-                                  🛰️ Scan
-                                </Link>
+                                <>
+                                  {request.geometry ? (
+                                    <button
+                                      onClick={() => handleScanWithGeometry(request)}
+                                      className="text-blue-600 hover:text-blue-700 font-medium"
+                                    >
+                                      🛰️ Auto Scan
+                                    </button>
+                                  ) : (
+                                    <Link
+                                      href="/scan"
+                                      className="text-blue-600 hover:text-blue-700 font-medium"
+                                    >
+                                      🛰️ Manual Scan
+                                    </Link>
+                                  )}
+                                </>
                               )}
                             </td>
                           </tr>
@@ -348,18 +379,48 @@ export default function AdminRegistrationsPage() {
                       </p>
                     </div>
                   )}
+
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 mb-1">Land Boundary</h3>
+                    {selectedRequest.geometry ? (
+                      <div className="flex items-center space-x-2">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          ✓ Geometry Available
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          Ready for automatic scanning
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                        Manual Drawing Required
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="mt-6 flex justify-between">
                   <div>
                     {selectedRequest.status === "pending" && (
-                      <Link
-                        href="/scan"
-                        className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center space-x-2 font-medium"
-                      >
-                        <span>🛰️</span>
-                        <span>Scan This Land</span>
-                      </Link>
+                      <>
+                        {selectedRequest.geometry ? (
+                          <button
+                            onClick={() => handleScanWithGeometry(selectedRequest)}
+                            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center space-x-2 font-medium"
+                          >
+                            <span>🛰️</span>
+                            <span>Auto Scan with Boundary</span>
+                          </button>
+                        ) : (
+                          <Link
+                            href="/scan"
+                            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center space-x-2 font-medium"
+                          >
+                            <span>🛰️</span>
+                            <span>Manual Scan (Draw Boundary)</span>
+                          </Link>
+                        )}
+                      </>
                     )}
                   </div>
                   <div className="flex space-x-3">

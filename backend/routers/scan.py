@@ -156,22 +156,45 @@ async def run_scan(request: ScanRequest):
         db.table("scan_results").insert(scan_record).execute()
         logger.info(f"Saved scan result {scan_id} to database")
         
-        # Automatically create carbon credit from scan result
+        # Automatically create carbon credit from scan result with 'pending_approval' status
         credit_id = str(uuid.uuid4())
         credit_record = {
             "id": credit_id,
             "scan_id": scan_id,
             "plot_id": plot_id,
             "owner_id": owner_id,  # Use converted UUID
-            "vintage_year": datetime.now().year,  # Use current year dynamically
+            "vintage_year": datetime.now().year,
             "quantity_tco2e": tco2e,
             "price_per_tonne": price,
-            "status": "listed",  # Automatically list the credit
+            "status": "pending_approval",  # Wait for landowner approval before listing
             "integrity_score": integrity,
-            "risk_score": risk["composite_risk"] * 100,  # Convert to percentage
+            "risk_score": risk["composite_risk"],  # Keep as 0-1 decimal, not percentage
         }
         db.table("carbon_credits").insert(credit_record).execute()
-        logger.info(f"Created carbon credit {credit_id} from scan {scan_id}")
+        logger.info(f"Created carbon credit {credit_id} with pending_approval status")
+        
+        # Create notification for landowner
+        notification_data = {
+            "user_id": owner_id,
+            "type": "scan_complete",
+            "title": "Land Scan Complete - Review Results",
+            "message": f"Your land scan has been completed. Review the findings: {tco2e:.2f} tCO2e valued at ${price:.2f}/tonne (Total: ${tco2e * price:.2f}). Please review and approve to list on marketplace.",
+            "data": {
+                "scan_id": scan_id,
+                "credit_id": credit_id,
+                "plot_id": plot_id,
+                "tco2e": tco2e,
+                "price_per_tonne": price,
+                "total_value": tco2e * price,
+                "integrity_score": integrity,
+                "risk_score": risk["composite_risk"] * 100,  # Display as percentage
+                "biomass": biomass,
+                "ndvi": ndvi,
+                "evi": evi,
+            }
+        }
+        db.table("notifications").insert(notification_data).execute()
+        logger.info(f"Created notification for landowner {owner_id}")
         
     except Exception as e:
         logger.warning(f"Failed to save scan to DB: {e}")

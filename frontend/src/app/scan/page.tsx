@@ -19,6 +19,7 @@ function ScanPageContent() {
   const [loading, setLoading] = useState(false);
   const [area, setArea] = useState<number>(0);
   const [contracted, setContracted] = useState(false);
+  const [ownerInfo, setOwnerInfo] = useState<any>(null);
 
   useEffect(() => {
     console.log(
@@ -83,6 +84,52 @@ function ScanPageContent() {
 
       mapInstance.on("load", () => {
         console.log("Mapbox map loaded and tiles rendered successfully!");
+        
+        // Check if there's a geometry from registration request
+        const storedGeometry = localStorage.getItem("scanGeometry");
+        const storedOwnerInfo = localStorage.getItem("scanOwnerInfo");
+        
+        if (storedGeometry && drawInstance) {
+          try {
+            const geometry = JSON.parse(storedGeometry);
+            const feature = {
+              type: "Feature" as const,
+              geometry: geometry,
+              properties: {}
+            };
+            
+            // Add the geometry to the map
+            drawInstance.add(feature as any);
+            setDrawnGeometry(geometry);
+            
+            // Calculate area
+            if (geometry.type === "Polygon") {
+              const coords = geometry.coordinates[0];
+              const areaKm2 = calculatePolygonArea(coords);
+              setArea(areaKm2 * 100);
+            }
+            
+            // Set owner info if available
+            if (storedOwnerInfo) {
+              setOwnerInfo(JSON.parse(storedOwnerInfo));
+            }
+            
+            // Fit map to the geometry bounds
+            const coordinates = geometry.coordinates[0];
+            const bounds = coordinates.reduce((bounds: any, coord: any) => {
+              return bounds.extend(coord);
+            }, new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]));
+            
+            mapInstance.fitBounds(bounds, { padding: 50 });
+            
+            // Clear localStorage after loading
+            localStorage.removeItem("scanGeometry");
+            localStorage.removeItem("scanOwnerInfo");
+            localStorage.removeItem("scanRequestId");
+          } catch (error) {
+            console.error("Failed to load stored geometry:", error);
+          }
+        }
       });
 
       mapInstance.on("error", (e) => {
@@ -137,11 +184,38 @@ function ScanPageContent() {
     setScanResult(null);
 
     try {
+      // Get owner_id from stored request info or use demo user
+      const requestId = localStorage.getItem("scanRequestId");
+      const storedOwnerInfoStr = localStorage.getItem("scanOwnerInfo");
+      let ownerId = "demo-user";
+      
+      // If we have owner info, try to find the user by email
+      if (storedOwnerInfoStr) {
+        const storedOwnerInfo = JSON.parse(storedOwnerInfoStr);
+        // Look up user by email to get their user_id
+        try {
+          const userResponse = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8002"}/api/auth/user-by-email?email=${encodeURIComponent(storedOwnerInfo.email)}`
+          );
+          if (userResponse.ok) {
+            const userData = await userResponse.json();
+            ownerId = userData.id;
+          }
+        } catch (err) {
+          console.warn("Could not fetch user by email:", err);
+        }
+      }
+      
       const result = (await api.runScan({
         geometry: drawnGeometry,
-        owner_id: "demo-user",
+        owner_id: ownerId,
       })) as ScanResult;
       setScanResult(result);
+      
+      // Alert admin that notification was sent to landowner
+      if (ownerInfo) {
+        alert(`✅ Scan complete! A notification has been sent to ${ownerInfo.name} (${ownerInfo.email}) to review and approve the results.`);
+      }
     } catch (err) {
       console.error("Scan failed:", err);
       alert("Scan failed. Make sure the backend is running on port 8002.");
@@ -150,22 +224,7 @@ function ScanPageContent() {
   };
 
   const handleAcceptContract = async () => {
-    if (!scanResult) return;
-    try {
-      await api.createCredit({
-        scan_id: scanResult.scan_id,
-        plot_id: null,
-        owner_id: "demo-user",
-        vintage_year: new Date().getFullYear(),
-        quantity_tco2e: scanResult.estimated_tco2e,
-        price_per_tonne: scanResult.buy_price_per_tonne,
-        integrity_score: scanResult.integrity_score,
-        risk_score: scanResult.risk_adjustment,
-      });
-      setContracted(true);
-    } catch (err) {
-      console.error("Contract failed:", err);
-    }
+    alert("This button is for the admin view. Landowners approve via their dashboard under 'Pending Scans'.");
   };
 
   return (
@@ -181,6 +240,18 @@ function ScanPageContent() {
             Draw a polygon on the map to select your plot, then run an AI scan
             to estimate its carbon value using real satellite imagery.
           </p>
+
+          {ownerInfo && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <h3 className="font-semibold text-blue-900 mb-2">Registration Request</h3>
+              <div className="text-sm text-blue-800 space-y-1">
+                <p><strong>Owner:</strong> {ownerInfo.name}</p>
+                <p><strong>Email:</strong> {ownerInfo.email}</p>
+                <p><strong>Location:</strong> {ownerInfo.location}</p>
+                <p><strong>Type:</strong> {ownerInfo.type}</p>
+              </div>
+            </div>
+          )}
 
           {drawnGeometry ? (
             <div className="space-y-4">
@@ -290,23 +361,21 @@ function ScanPageContent() {
                     />
                   </div>
 
-                  {!contracted ? (
-                    <button
-                      onClick={handleAcceptContract}
-                      className="w-full bg-terra-600 text-white py-3 rounded-lg font-semibold hover:bg-terra-700 transition"
-                    >
-                      Accept Conservation Contract
-                    </button>
-                  ) : (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-                      <div className="text-green-700 font-semibold">
-                        Contract Accepted!
-                      </div>
-                      <div className="text-sm text-green-600 mt-1">
-                        Credit issued and added to the registry.
-                      </div>
+                  {/* Admin Info - No contract acceptance here */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h4 className="font-semibold text-blue-900 mb-2">Next Steps</h4>
+                    <div className="text-sm text-blue-800 space-y-2">
+                      <p>✅ Scan complete and saved</p>
+                      <p>📧 Notification sent to landowner</p>
+                      <p>⏳ Awaiting landowner approval</p>
+                      {ownerInfo && (
+                        <p className="mt-3 pt-3 border-t border-blue-300">
+                          <strong>Landowner:</strong> {ownerInfo.name}<br/>
+                          They will review via their dashboard.
+                        </p>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
               )}
             </div>
