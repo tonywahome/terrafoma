@@ -1,3 +1,5 @@
+[https://docs.google.com/presentation/d/18c7yJ2kd2ViIEpvWadIm27Vrxt4WoS2w/edit?usp=sharing&ouid=113356697071084537493&rtpof=true&sd=true] TerraFoma Slides
+
 # 🌍 TerraFoma
 
 **Empowering local economies through transparent, AI-verified carbon credits**
@@ -9,7 +11,7 @@ TerraFoma is a comprehensive carbon credit platform that connects landowners dir
 TerraFoma bridges the gap between landowners and carbon markets by:
 - **Automated Verification**: AI-powered satellite analysis using Google Earth Engine
 - **Direct Connection**: Landowners register land → Admin verifies → Landowner approves → Instant marketplace listing
-- **Transparent Pricing**: Dynamic pricing based on quality metrics ($12-40 per tonne CO₂e)
+- **Transparent Pricing**: Dynamic pricing based on quality metrics 
 - **Real-time Tracking**: Complete workflow management with notifications and dashboard analytics
 
 ## 📑 Table of Contents
