@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 import logging
 from datetime import datetime
-from database import get_supabase_client
+from database import get_supabase_client, get_admin_client
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/landowner", tags=["landowner"])
@@ -146,7 +146,9 @@ async def approve_or_reject_listing(data: ApprovalRequest, background_tasks: Bac
                     "rejection_reason": data.rejection_reason,
                 }
             }
-            db.table("notifications").insert(notification_data).execute()
+            # Use admin client to bypass RLS for notification creation
+            admin_db = get_admin_client()
+            admin_db.table("notifications").insert(notification_data).execute()
         
         action_text = "approved and listed on marketplace" if data.approved else "rejected"
         

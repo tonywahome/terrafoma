@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 import logging
 from datetime import datetime
-from database import get_supabase_client
+from database import get_supabase_client, get_admin_client
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/notifications", tags=["notifications"])
@@ -24,7 +24,8 @@ class NotificationResponse(BaseModel):
 async def get_notifications(user_id: str):
     """Get all notifications for a user by user_id query param."""
     try:
-        db = get_supabase_client()
+        # Use admin client to bypass RLS
+        db = get_admin_client()
         result = db.table("notifications")\
             .select("*")\
             .eq("user_id", user_id)\
@@ -41,7 +42,8 @@ async def get_notifications(user_id: str):
 @router.get("/me")
 async def get_my_notifications(user_id: str):
     """Get all notifications for the logged-in user."""
-    try:
+    try:# Use admin client to bypass RLS
+        db = get_admin
         db = get_supabase_client()
         result = db.table("notifications")\
             .select("*")\
@@ -60,7 +62,8 @@ async def get_my_notifications(user_id: str):
 async def get_unread_count(user_id: str):
     """Get count of unread notifications."""
     try:
-        db = get_supabase_client()
+        # Use admin client to bypass RLS
+        db = get_admin_client()
         result = db.table("notifications")\
             .select("id", count="exact")\
             .eq("user_id", user_id)\
@@ -78,7 +81,8 @@ async def get_unread_count(user_id: str):
 async def mark_notification_read(notification_id: str):
     """Mark a notification as read."""
     try:
-        db = get_supabase_client()
+        # Use admin client to bypass RLS
+        db = get_admin_client()
         result = db.table("notifications")\
             .update({"read": True})\
             .eq("id", notification_id)\

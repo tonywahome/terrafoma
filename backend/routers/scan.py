@@ -8,7 +8,7 @@ from services.risk_scorer import calculate_risk_score, get_weather_data
 from services.gee_feature_extractor import extract_sentinel_features
 from services.carbon_calculator import calculate_credit_price
 from services.location_service import get_location_from_geometry, get_centroid_from_geometry
-from database import get_supabase_client
+from database import get_supabase_client, get_admin_client
 import random
 
 logger = logging.getLogger(__name__)
@@ -193,7 +193,9 @@ async def run_scan(request: ScanRequest):
                 "evi": evi,
             }
         }
-        db.table("notifications").insert(notification_data).execute()
+        # Use admin client to bypass RLS for notification creation
+        admin_db = get_admin_client()
+        admin_db.table("notifications").insert(notification_data).execute()
         logger.info(f"Created notification for landowner {owner_id}")
         
     except Exception as e:
