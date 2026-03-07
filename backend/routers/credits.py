@@ -15,7 +15,7 @@ async def get_credit_stats():
 
     if not credits:
         return CreditStats(
-            total_credits=0, total_verified=0, total_listed=0,
+            total_credits=0, total_verified=0, total_pending_approval=0, total_listed=0,
             total_sold=0, total_retired=0, total_tco2e=0,
             avg_price=0, avg_integrity=0,
         )
@@ -23,6 +23,7 @@ async def get_credit_stats():
     return CreditStats(
         total_credits=len(credits),
         total_verified=sum(1 for c in credits if c["status"] == "verified"),
+        total_pending_approval=sum(1 for c in credits if c["status"] == "pending_approval"),
         total_listed=sum(1 for c in credits if c["status"] == "listed"),
         total_sold=sum(1 for c in credits if c["status"] == "sold"),
         total_retired=sum(1 for c in credits if c["status"] == "retired"),

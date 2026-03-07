@@ -42,6 +42,7 @@ class CreditStatusUpdate(BaseModel):
 class CreditStats(BaseModel):
     total_credits: int
     total_verified: int
+    total_pending_approval: int
     total_listed: int
     total_sold: int
     total_retired: int

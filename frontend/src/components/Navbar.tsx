@@ -47,7 +47,7 @@ export default function Navbar() {
         ...baseLinks,
         { href: "/admin/requests", label: "Registrations" },
         { href: "/scan", label: "Scan Land" },
-        { href: "/dashboard", label: "Dashboard" },
+        { href: "/admin/dashboard", label: "Dashboard" },
       ];
     }
 

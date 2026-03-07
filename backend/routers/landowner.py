@@ -126,8 +126,8 @@ async def approve_or_reject_listing(data: ApprovalRequest, background_tasks: Bac
         logger.info(f"Credit {data.credit_id} {new_status} by landowner")
         
         # Create confirmation notification
-        plot = credit.get("land_plots", {})
-        owner_id = plot.get("owner_id") if plot else None
+        # Use the owner_id directly from the credit, not from land_plots
+        owner_id = credit.get("owner_id")
         
         if owner_id:
             notification_data = {
