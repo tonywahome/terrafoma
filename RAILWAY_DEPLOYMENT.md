@@ -110,6 +110,14 @@ echo "18" > frontend/.nvmrc
 git add frontend/.nvmrc
 git commit -m "Set Node version"
 git push
+
+# Security vulnerabilities - update dependencies
+cd frontend
+npm update next@latest
+npm audit fix
+git add package.json package-lock.json
+git commit -m "Fix: Update dependencies for security"
+git push
 ```
 
 ### CORS Errors
