@@ -41,6 +41,12 @@ class FootprintRequest(BaseModel):
     energy_kwh_monthly: float = 0
     fuel_litres_monthly: float = 0
     fuel_type: str = "diesel"
+    flights_short_km_annual: float = 0  # Flights < 1500 km
+    flights_long_km_annual: float = 0  # Flights > 1500 km
+    waste_landfill_kg_monthly: float = 0
+    waste_recycled_kg_monthly: float = 0
+    water_m3_monthly: float = 0
+    freight_tonne_km_monthly: float = 0
     industry_sector: Optional[str] = None
 
 
@@ -48,4 +54,9 @@ class FootprintResponse(BaseModel):
     annual_tco2e: float
     electricity_tco2e: float
     fuel_tco2e: float
+    flights_tco2e: float
+    waste_tco2e: float
+    water_tco2e: float
+    freight_tco2e: float
     monthly_tco2e: float
+    breakdown: dict

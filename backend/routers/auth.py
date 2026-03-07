@@ -212,3 +212,33 @@ async def get_current_user(token: str):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get user"
         )
+
+
+@router.get("/user-by-email")
+async def get_user_by_email(email: str):
+    """Get user by email address (for internal use)."""
+    try:
+        db = get_admin_client()
+        
+        # Get user by email
+        user_result = db.table("users").select("*").eq("email", email).execute()
+        
+        if not user_result.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        user = user_result.data[0]
+        user_response = {k: v for k, v in user.items() if k != "password_hash"}
+        
+        return user_response
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Get user by email error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get user by email"
+        )

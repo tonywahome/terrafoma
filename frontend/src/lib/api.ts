@@ -64,9 +64,45 @@ export const api = {
     energy_kwh_monthly: number;
     fuel_litres_monthly: number;
     fuel_type: string;
+    flights_short_km_annual?: number;
+    flights_long_km_annual?: number;
+    waste_landfill_kg_monthly?: number;
+    waste_recycled_kg_monthly?: number;
+    water_m3_monthly?: number;
+    freight_tonne_km_monthly?: number;
   }) =>
     fetchAPI("/api/dashboard/footprint", {
       method: "POST",
       body: JSON.stringify(data),
     }),
+
+  // Notifications
+  getNotifications: (userId: string) =>
+    fetchAPI(`/api/notifications/me?user_id=${userId}`),
+  getUnreadCount: (userId: string) =>
+    fetchAPI(`/api/notifications/unread-count?user_id=${userId}`),
+  markNotificationRead: (notificationId: string) =>
+    fetchAPI(`/api/notifications/${notificationId}/mark-read`, {
+      method: "PATCH",
+    }),
+  markAllRead: (userId: string) =>
+    fetchAPI(`/api/notifications/mark-all-read`, {
+      method: "POST",
+      body: JSON.stringify({ user_id: userId }),
+    }),
+
+  // Landowner - Pending Scans & Approval
+  getPendingScans: (userId: string) =>
+    fetchAPI(`/api/landowner/pending-scans?user_id=${userId}`),
+  approveListing: (creditId: string, approved: boolean, rejectionReason?: string) =>
+    fetchAPI("/api/landowner/approve-listing", {
+      method: "POST",
+      body: JSON.stringify({
+        credit_id: creditId,
+        approved,
+        rejection_reason: rejectionReason,
+      }),
+    }),
+  getMyCredits: (userId: string) =>
+    fetchAPI(`/api/landowner/my-credits?user_id=${userId}`),
 };

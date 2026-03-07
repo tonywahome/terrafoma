@@ -59,7 +59,19 @@ export interface FootprintResult {
   annual_tco2e: number;
   electricity_tco2e: number;
   fuel_tco2e: number;
+  flights_tco2e: number;
+  waste_tco2e: number;
+  water_tco2e: number;
+  freight_tco2e: number;
   monthly_tco2e: number;
+  breakdown: {
+    electricity: number;
+    fuel: number;
+    flights: number;
+    waste: number;
+    water: number;
+    freight: number;
+  };
 }
 
 export interface CreditStats {

@@ -30,6 +30,7 @@ export default function Navbar() {
     if (user.role === "landowner") {
       return [
         ...baseLinks,
+        { href: "/landowner", label: "Dashboard" },
         { href: "/request-registration", label: "Register Land" },
       ];
     }
@@ -44,6 +45,7 @@ export default function Navbar() {
     if (user.role === "admin") {
       return [
         ...baseLinks,
+        { href: "/admin/requests", label: "Registrations" },
         { href: "/scan", label: "Scan Land" },
         { href: "/dashboard", label: "Dashboard" },
       ];
