@@ -1,7 +1,12 @@
-import joblib
-import numpy as np
 import os
 import logging
+
+try:
+    import joblib
+    import numpy as np
+    _ML_AVAILABLE = True
+except ImportError:
+    _ML_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +25,8 @@ LAND_USE_ENCODING = {
 def _load_biomass_model():
     """Load the trained biomass model with scaler."""
     global _biomass_model_data
+    if not _ML_AVAILABLE:
+        return None
     if _biomass_model_data is None:
         model_path = os.path.join(os.path.dirname(__file__), "..", "ml", "models", "biomass_model_v1.pkl")
         abs_model_path = os.path.abspath(model_path)
@@ -59,6 +66,8 @@ def _load_biomass_model():
 
 def _load_integrity_model():
     global _integrity_model
+    if not _ML_AVAILABLE:
+        return None
     if _integrity_model is None:
         model_path = os.path.join(
             os.path.dirname(__file__), "..", "ml", "integrity_model.pkl"
@@ -101,8 +110,8 @@ def predict_biomass_from_features(feature_dict: dict) -> float:
         evi = feature_dict.get('evi', 0.3)
         biomass = ndvi * 300 + evi * 50
         logger.warning(f"   Fallback result: {biomass:.2f} tonnes/ha (NDVI={ndvi:.3f}, EVI={evi:.3f})")
-        return round(float(np.clip(biomass, 5, 400)), 2)
-    
+        return round(float(max(5.0, min(400.0, biomass))), 2)
+
     # Model is loaded - verify its contents
     logger.info("✅ Model data loaded successfully!")
     logger.info(f"   Model type: {type(model_data)}")
@@ -144,7 +153,7 @@ def predict_biomass_from_features(feature_dict: dict) -> float:
         logger.info(f"   Raw prediction: {prediction:.2f} tonnes/ha")
         
         # Clip to reasonable range
-        biomass = float(np.clip(prediction, 1, 500))
+        biomass = float(max(1.0, min(500.0, prediction)))
         logger.info(f"   Final prediction (clipped): {biomass:.2f} tonnes/ha")
         
         logger.info(f"✅ USING TRAINED MODEL: {biomass:.2f} tonnes/ha (NDVI={feature_dict['ndvi']:.3f})")
@@ -158,7 +167,7 @@ def predict_biomass_from_features(feature_dict: dict) -> float:
         # Fallback
         ndvi = feature_dict.get('ndvi', 0.5)
         biomass = ndvi * 300
-        result = round(float(np.clip(biomass, 5, 400)), 2)
+        result = round(float(max(5.0, min(400.0, biomass))), 2)
         logger.warning(f"   Fallback result: {result:.2f} tonnes/ha")
         logger.info("=" * 60)
         return result
@@ -176,16 +185,9 @@ def estimate_biomass(
     model_data = _load_biomass_model()
     land_type = LAND_USE_ENCODING.get(land_use, 2)
 
-    if model_data is not None and 'model' in model_data:
-        # This is a simplified version, may not match training features
-        logger.warning("Using legacy estimate_biomass - consider using predict_biomass_from_features with full features")
-        features = np.array([[ndvi, evi, elevation, slope, precip, land_type]])
-        # Note: This won't work correctly with the real model which expects 13 features
-        # Fallback to formula
-        
     # Fallback formula if model not trained yet
     biomass = ndvi * 300 + evi * 50 + (precip - 800) / 1200 * 40 - slope * 0.5
-    return round(float(np.clip(biomass, 5, 350)), 2)
+    return round(float(max(5.0, min(350.0, biomass))), 2)
 
 
 def calculate_integrity_score(
@@ -205,7 +207,7 @@ def calculate_integrity_score(
     model = _load_integrity_model()
     land_type = LAND_USE_ENCODING.get(land_use, 2)
 
-    if model is not None:
+    if model is not None and _ML_AVAILABLE:
         features = np.array(
             [
                 [
@@ -225,7 +227,7 @@ def calculate_integrity_score(
             ]
         )
         score = model.predict(features)[0]
-        return round(float(np.clip(score, 0, 100)), 1)
+        return round(float(max(0.0, min(100.0, score))), 1)
 
     # Fallback rule-based calculation
     data_quality = (
@@ -246,4 +248,4 @@ def calculate_integrity_score(
     )
     additionality = additionality_score * 15
     score = data_quality + model_conf + temporal + risk_adj + additionality
-    return round(float(np.clip(score, 0, 100)), 1)
+    return round(float(max(0.0, min(100.0, score))), 1)

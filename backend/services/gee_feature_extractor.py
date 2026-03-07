@@ -7,8 +7,14 @@ installed or GEE credentials are not configured.
 """
 
 import logging
+import random
 from typing import Dict, Optional
-import numpy as np
+
+try:
+    import numpy as np
+    _NP_AVAILABLE = True
+except ImportError:
+    _NP_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -56,8 +62,8 @@ def _mock_features(geometry: Dict) -> Dict:
                           (bands.get("B8", 0.35) + bands.get("B11", 0.18) + 1e-9), 4),
         "nbr":       round((bands.get("B8", 0.35) - bands.get("B12", 0.10)) /
                           (bands.get("B8", 0.35) + bands.get("B12", 0.10) + 1e-9), 4),
-        "elevation": float(np.random.uniform(1600, 2800)),
-        "slope":     float(np.random.uniform(2, 18)),
+        "elevation": float(np.random.uniform(1600, 2800) if _NP_AVAILABLE else random.uniform(1600, 2800)),
+        "slope":     float(np.random.uniform(2, 18) if _NP_AVAILABLE else random.uniform(2, 18)),
         "n_images":  0,
     }
 
@@ -191,7 +197,7 @@ def extract_sentinel_features(
         return None
 
 
-def features_to_array(features: Dict) -> np.ndarray:
+def features_to_array(features: Dict):
     """
     Convert feature dictionary to numpy array in correct order for model.
     
@@ -207,4 +213,6 @@ def features_to_array(features: Dict) -> np.ndarray:
         'elevation', 'slope'
     ]
     
-    return np.array([features[name] for name in feature_order])
+    if _NP_AVAILABLE:
+        return np.array([features[name] for name in feature_order])
+    return [features[name] for name in feature_order]
