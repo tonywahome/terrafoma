@@ -9,3 +9,14 @@ geojson==3.2.0
 jinja2==3.1.5
 fpdf2==2.8.2
 python-multipart==0.0.20
+
+# ML and Data Science
+numpy==2.2.2
+pandas==2.2.3
+scikit-learn==1.6.1
+joblib==1.4.2
+
+# Google Earth Engine
+earthengine-api==1.7.16
+google-auth==2.48.0
+google-auth-httplib2==0.3.0
