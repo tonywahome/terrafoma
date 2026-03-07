@@ -42,9 +42,9 @@ async def get_notifications(user_id: str):
 @router.get("/me")
 async def get_my_notifications(user_id: str):
     """Get all notifications for the logged-in user."""
-    try:# Use admin client to bypass RLS
-        db = get_admin
-        db = get_supabase_client()
+    try:
+        # Use admin client to bypass RLS
+        db = get_admin_client()
         result = db.table("notifications")\
             .select("*")\
             .eq("user_id", user_id)\
