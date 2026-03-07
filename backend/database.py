@@ -17,7 +17,9 @@ class InMemoryDB:
             "scan_results": [],
             "land_plots": [],
             "transactions": [],
-            "audit_log": []
+            "audit_log": [],
+            "users": [],
+            "sessions": [],
         }
         self._initialized = False
     
@@ -107,74 +109,119 @@ class InMemoryDB:
 
 class InMemoryTable:
     """Mimics Supabase table interface for in-memory storage."""
-    
+
     def __init__(self, data: Dict, table_name: str):
         self.data = data
         self.table_name = table_name
         self.query = {}
         self.order_by_field = None
         self.order_desc = False
-    
+        self._pending_insert = None
+        self._pending_delete = False
+        self._pending_update = None
+        # Auto-create table if it doesn't exist
+        if table_name not in self.data:
+            self.data[table_name] = []
+
+    @staticmethod
+    def _result(rows):
+        return type('obj', (object,), {'data': rows})()
+
     def select(self, fields: str = "*"):
+        self._pending_insert = None
+        self._pending_delete = False
+        self._pending_update = None
         self.query = {}
         return self
-    
+
     def eq(self, field: str, value: Any):
         self.query[field] = value
         return self
-    
+
     def gte(self, field: str, value: Any):
         self.query[f"{field}__gte"] = value
         return self
-    
+
     def order(self, field: str, desc: bool = False):
         self.order_by_field = field
         self.order_desc = desc
         return self
-    
+
+    def insert(self, data):
+        self._pending_insert = data
+        return self
+
+    def update(self, data: Dict):
+        self._pending_update = data
+        return self
+
+    def delete(self):
+        self._pending_delete = True
+        return self
+
     def execute(self):
-        """Execute the query and return results."""
-        if self.table_name not in self.data:
-            return type('obj', (object,), {'data': []})()
-        
-        results = list(self.data[self.table_name])
-        
-        # Filter by exact matches
+        """Execute the pending operation and return results."""
+        table = self.data[self.table_name]
+
+        # INSERT
+        if self._pending_insert is not None:
+            payload = self._pending_insert
+            if isinstance(payload, list):
+                for item in payload:
+                    table.append(item)
+                return self._result(payload)
+            else:
+                table.append(payload)
+                return self._result([payload])
+
+        # DELETE
+        if self._pending_delete:
+            removed = []
+            remaining = []
+            for record in table:
+                if self._matches(record):
+                    removed.append(record)
+                else:
+                    remaining.append(record)
+            self.data[self.table_name] = remaining
+            return self._result(removed)
+
+        # UPDATE
+        if self._pending_update is not None:
+            updated = []
+            for i, record in enumerate(table):
+                if self._matches(record):
+                    table[i].update(self._pending_update)
+                    updated.append(table[i])
+            return self._result(updated)
+
+        # SELECT (default)
+        results = list(table)
         for key, value in self.query.items():
             if "__gte" in key:
                 field = key.replace("__gte", "")
                 results = [r for r in results if r.get(field, 0) >= value]
             else:
                 results = [r for r in results if r.get(key) == value]
-        
-        # Sort if requested
+
         if self.order_by_field:
             results.sort(
                 key=lambda x: x.get(self.order_by_field, ""),
-                reverse=self.order_desc
+                reverse=self.order_desc,
             )
-        
-        return type('obj', (object,), {'data': results})()
-    
-    def insert(self, data: Dict):
-        """Insert data into table."""
-        if isinstance(data, list):
-            for item in data:
-                self.data[self.table_name].append(item)
-            return type('obj', (object,), {'data': data})()
-        else:
-            self.data[self.table_name].append(data)
-            return type('obj', (object,), {'data': [data]})()
-    
-    def update(self, data: Dict):
-        """Update matching records."""
-        updated = []
-        for i, record in enumerate(self.data[self.table_name]):
-            matches = all(record.get(k) == v for k, v in self.query.items())
-            if matches:
-                self.data[self.table_name][i].update(data)
-                updated.append(self.data[self.table_name][i])
-        return type('obj', (object,), {'data': updated})()
+
+        return self._result(results)
+
+    def _matches(self, record: Dict) -> bool:
+        for key, value in self.query.items():
+            if "__gte" in key:
+                field = key.replace("__gte", "")
+                if record.get(field, 0) < value:
+                    return False
+            else:
+                if record.get(key) != value:
+                    return False
+        return True
 
 
 # Global in-memory database instance

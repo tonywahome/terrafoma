@@ -51,17 +51,25 @@ export default function MarketplacePage() {
   const handlePurchase = async (credit: CarbonCredit) => {
     setPurchasing(credit.id);
     try {
-      const tx = (await api.createTransaction({
-        credit_id: credit.id,
-        buyer_id: "demo-buyer",
-        quantity_tco2e: credit.quantity_tco2e,
-        total_price: credit.price_per_tonne * credit.quantity_tco2e,
-      })) as any;
-      setPurchased([...purchased, credit.id]);
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          creditId: credit.id,
+          creditName: credit.plot_name ?? `Credit ${credit.id.slice(0, 8)}`,
+          quantity: credit.quantity_tco2e,
+          totalPrice: credit.price_per_tonne * credit.quantity_tco2e,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Checkout failed");
+
+      window.location.href = data.url;
     } catch (err) {
       console.error("Purchase failed:", err);
+      setPurchasing(null);
     }
-    setPurchasing(null);
   };
 
   const filteredCredits = credits.filter((c) => {

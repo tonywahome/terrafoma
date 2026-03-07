@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell -Command \"Get-Process | Where-Object {$_Name -like ''*python*'' -or $_Name -like ''*uvicorn*''} | Select-Object Id,Name,CPU | Format-Table\")",
+      "Bash(powershell -Command \"Get-Process python -ErrorAction SilentlyContinue | Format-Table Id,Name; Get-Process uvicorn -ErrorAction SilentlyContinue | Format-Table Id,Name\")",
+      "Bash(powershell -Command \"Get-NetTCPConnection -LocalPort 8002 | Format-Table -AutoSize; \\(Get-Process python -EA 0\\).Id; \\(Get-Process uvicorn -EA 0\\).Id\")",
+      "Bash(powershell -Command \"netstat -ano | Select-String '':8002''\")",
+      "Bash(curl -s http://localhost:8002/openapi.json)",
+      "Bash(python -c \"import sys,json; [print\\(m.upper\\(\\), p\\) for p,ops in json.load\\(sys.stdin\\).get\\(''paths'',{}\\).items\\(\\) for m in ops]\")",
+      "Bash(python -m uvicorn main:app --host 0.0.0.0 --port 8003 --reload)",
+      "Bash(curl -s http://localhost:8003/openapi.json)",
+      "Bash(npm install @polar-sh/sdk)",
+      "Bash(node -e \"require\\(''@polar-sh/sdk''\\)\")",
+      "Bash(npx tsc --noEmit)"
+    ]
+  }
+}
