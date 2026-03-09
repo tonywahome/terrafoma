@@ -195,7 +195,7 @@ function ScanPageContent() {
         // Look up user by email to get their user_id
         try {
           const userResponse = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8002"}/api/auth/user-by-email?email=${encodeURIComponent(storedOwnerInfo.email)}`
+            `/api/auth/user-by-email?email=${encodeURIComponent(storedOwnerInfo.email)}`
           );
           if (userResponse.ok) {
             const userData = await userResponse.json();

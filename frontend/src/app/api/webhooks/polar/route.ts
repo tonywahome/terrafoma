@@ -60,7 +60,8 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8002";
+  // Server-side route: use BACKEND_URL (no NEXT_PUBLIC needed)
+  const apiUrl = process.env.BACKEND_URL ?? "https://terrafoma-production-1c7c.up.railway.app";
 
   try {
     const txRes = await fetch(`${apiUrl}/api/transactions`, {

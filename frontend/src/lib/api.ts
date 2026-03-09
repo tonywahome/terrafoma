@@ -1,4 +1,6 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+// Empty string so all calls use relative paths (/api/...) which are proxied
+// to the backend via the rewrites in next.config.js.
+const API_URL = "";
 
 async function fetchAPI<T>(
   endpoint: string,

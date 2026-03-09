@@ -70,8 +70,7 @@ function AdminDashboardContent() {
       setLoading(true);
 
       // Fetch registration requests
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8002";
-      const requests = await fetch(`${baseUrl}/api/registration/requests`).then(r => r.json());
+      const requests = await fetch(`/api/registration/requests`).then(r => r.json());
       
       // Fetch credit stats
       const creditStats: any = await api.getCreditStats();
