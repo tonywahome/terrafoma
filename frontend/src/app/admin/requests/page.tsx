@@ -53,9 +53,10 @@ export default function AdminRegistrationsPage() {
   const fetchRequests = async () => {
     try {
       setLoading(true);
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8002";
       const url = filter === "all" 
-        ? "http://localhost:8002/api/registration/requests"
-        : `http://localhost:8002/api/registration/requests?status=${filter}`;
+        ? `${baseUrl}/api/registration/requests`
+        : `${baseUrl}/api/registration/requests?status=${filter}`;
       
       const response = await fetch(url);
       

@@ -9,7 +9,7 @@ env/
 # Environment
 .env
 .env.local
-.env.production
+# .env.production is intentionally NOT ignored (contains only public NEXT_PUBLIC_* URLs)
 .streamlit/secrets.toml
 
 # Build
