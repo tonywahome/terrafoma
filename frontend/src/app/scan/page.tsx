@@ -24,50 +24,35 @@ function ScanPageContent() {
   const [ownerInfo, setOwnerInfo] = useState<any>(null);
 
   useEffect(() => {
-    console.log(
-      "useEffect running, mapContainer:",
-      mapContainer.current ? "exists" : "null",
-      "map:",
-      map.current ? "exists" : "null",
-    );
+    if (map.current) return;
+    if (!mapContainer.current) return;
 
-    if (map.current) {
-      console.log("Map already initialized, skipping");
-      return;
-    }
+    // Fetch token at runtime from server-side API route — avoids build-time baking
+    fetch('/api/config')
+      .then(r => r.json())
+      .then(({ mapboxToken }) => {
+        if (!mapboxToken) {
+          console.error('Mapbox token not configured');
+          return;
+        }
+        // @ts-ignore
+        mapboxgl.workerUrl = '/mapbox-gl-csp-worker.js';
+        mapboxgl.accessToken = mapboxToken;
+        initMap();
+      })
+      .catch(err => console.error('Failed to load config:', err));
 
-    if (!mapContainer.current) {
-      console.log("Map container not ready yet");
-      return;
-    }
-
-    const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
-    console.log("Mapbox token loaded:", mapboxToken ? "YES" : "NO");
-    if (mapboxToken) {
-      console.log("Token starts with:", mapboxToken.substring(0, 20) + "...");
-    }
-
-    if (!mapboxToken) {
-      console.error("Mapbox token not found in environment");
-      return;
-    }
-
-    console.log("Initializing Mapbox map...");
-    // Point to the worker file served from /public (required for Next.js standalone mode)
-    // @ts-ignore
-    mapboxgl.workerUrl = '/mapbox-gl-csp-worker.js';
-    mapboxgl.accessToken = mapboxToken;
-
-    try {
-      const mapInstance = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: "mapbox://styles/mapbox/satellite-streets-v12",
-        center: [36.8, -0.4],
-        zoom: 12,
-      });
+    function initMap() {
+      if (!mapContainer.current) return;
+      try {
+        const mapInstance = new mapboxgl.Map({
+          container: mapContainer.current,
+          style: "mapbox://styles/mapbox/satellite-streets-v12",
+          center: [36.8, -0.4],
+          zoom: 12,
+        });
 
       map.current = mapInstance;
-      console.log("Mapbox map instance created successfully");
 
       const drawInstance = new MapboxDraw({
         displayControlsDefault: false,
@@ -140,8 +125,9 @@ function ScanPageContent() {
       mapInstance.on("error", (e) => {
         console.error("Mapbox error:", e);
       });
-    } catch (error) {
-      console.error("Failed to initialize Mapbox:", error);
+      } catch (error) {
+        console.error("Failed to initialize Mapbox:", error);
+      }
     }
 
     return () => {

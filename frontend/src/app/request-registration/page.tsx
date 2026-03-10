@@ -31,24 +31,30 @@ function RequestRegistrationContent() {
     if (map.current) return;
     if (!mapContainer.current) return;
 
-    const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
-    if (!mapboxToken) {
-      console.error("Mapbox token not found");
-      return;
-    }
+    // Fetch token at runtime from server-side API route — avoids build-time baking
+    fetch('/api/config')
+      .then(r => r.json())
+      .then(({ mapboxToken }) => {
+        if (!mapboxToken) {
+          console.error('Mapbox token not configured');
+          return;
+        }
+        // @ts-ignore
+        mapboxgl.workerUrl = '/mapbox-gl-csp-worker.js';
+        mapboxgl.accessToken = mapboxToken;
+        initMap();
+      })
+      .catch(err => console.error('Failed to load config:', err));
 
-    // Point to the worker file served from /public (required for Next.js standalone mode)
-    // @ts-ignore
-    mapboxgl.workerUrl = '/mapbox-gl-csp-worker.js';
-    mapboxgl.accessToken = mapboxToken;
-
-    try {
-      const mapInstance = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: "mapbox://styles/mapbox/satellite-streets-v12",
-        center: [36.8, -0.4], // Kenya
-        zoom: 10,
-      });
+    function initMap() {
+      if (!mapContainer.current) return;
+      try {
+        const mapInstance = new mapboxgl.Map({
+          container: mapContainer.current,
+          style: "mapbox://styles/mapbox/satellite-streets-v12",
+          center: [36.8, -0.4],
+          zoom: 10,
+        });
 
       map.current = mapInstance;
 
@@ -73,8 +79,9 @@ function RequestRegistrationContent() {
       mapInstance.on("load", () => {
         console.log("Map loaded successfully!");
       });
-    } catch (error) {
-      console.error("Failed to initialize Mapbox:", error);
+      } catch (error) {
+        console.error("Failed to initialize Mapbox:", error);
+      }
     }
 
     return () => {
