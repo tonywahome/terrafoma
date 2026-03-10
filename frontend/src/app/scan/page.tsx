@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import mapboxgl from "mapbox-gl";
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
+import "mapbox-gl/dist/mapbox-gl.css";
+import "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css";
 import IntegrityBadge from "@/components/IntegrityBadge";
 import RiskGauge from "@/components/RiskGauge";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -51,6 +53,9 @@ function ScanPageContent() {
     }
 
     console.log("Initializing Mapbox map...");
+    // Point to the worker file served from /public (required for Next.js standalone mode)
+    // @ts-ignore
+    mapboxgl.workerUrl = '/mapbox-gl-csp-worker.js';
     mapboxgl.accessToken = mapboxToken;
 
     try {

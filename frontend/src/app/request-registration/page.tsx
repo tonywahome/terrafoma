@@ -37,6 +37,9 @@ function RequestRegistrationContent() {
       return;
     }
 
+    // Point to the worker file served from /public (required for Next.js standalone mode)
+    // @ts-ignore
+    mapboxgl.workerUrl = '/mapbox-gl-csp-worker.js';
     mapboxgl.accessToken = mapboxToken;
 
     try {
