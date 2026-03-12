@@ -30,19 +30,30 @@ function ScanPageContent() {
     // Fetch token at runtime from server-side API route — avoids build-time baking
     fetch('/api/config')
       .then(r => r.json())
-      .then(({ mapboxToken }) => {
-        console.log('Config response received. Token length:', mapboxToken?.length || 0);
+      .then((config) => {
+        console.log('=== CLIENT CONFIG DEBUG ===');
+        console.log('Full config response:', config);
+        console.log('Token length:', config.mapboxToken?.length || 0);
+        console.log('Debug info:', config.debug);
+        console.log('==========================');
+        
+        const { mapboxToken } = config;
         if (!mapboxToken) {
-          console.error('Mapbox token not configured - token is empty or undefined');
-          console.error('Full config response:', { mapboxToken });
+          console.error('❌ Mapbox token not configured - token is empty or undefined');
+          console.error('This usually means NEXT_PUBLIC_MAPBOX_TOKEN is not set in Railway');
+          alert('Map configuration error: Mapbox token not found. Please contact administrator.');
           return;
         }
         // @ts-ignore
         mapboxgl.workerUrl = '/mapbox-gl-csp-worker.js';
         mapboxgl.accessToken = mapboxToken;
+        console.log('✓ Mapbox token set successfully');
         initMap();
       })
-      .catch(err => console.error('Failed to load config:', err));
+      .catch(err => {
+        console.error('Failed to load config:', err);
+        alert('Failed to load map configuration. Please refresh the page.');
+      });
 
     function initMap() {
       if (!mapContainer.current) return;
