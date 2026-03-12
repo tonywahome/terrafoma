@@ -35,8 +35,10 @@ function RequestRegistrationContent() {
     fetch('/api/config')
       .then(r => r.json())
       .then(({ mapboxToken }) => {
+        console.log('Config response received. Token length:', mapboxToken?.length || 0);
         if (!mapboxToken) {
-          console.error('Mapbox token not configured');
+          console.error('Mapbox token not configured - token is empty or undefined');
+          console.error('Full config response:', { mapboxToken });
           return;
         }
         // @ts-ignore
