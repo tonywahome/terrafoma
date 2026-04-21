@@ -8,7 +8,7 @@ const nextConfig = {
     const backendUrl =
       process.env.BACKEND_URL ||
       (process.env.NODE_ENV === 'production'
-        ? 'https://terrafoma-production-1c7c.up.railway.app'
+        ? 'https://terrafoma-api-production-58dc.up.railway.app'
         : 'http://localhost:8002');
     return [
       {
