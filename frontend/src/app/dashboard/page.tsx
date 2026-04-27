@@ -163,7 +163,7 @@ function DashboardPageContent() {
     } catch (err: any) {
       setCalcError(
         err?.message ||
-          "Calculation failed. Is the backend running on port 8002?",
+          "Calculation failed. Is the backend running on port 8000?",
       );
     }
     setLoading(false);
@@ -455,14 +455,20 @@ function DashboardPageContent() {
               <span className="mr-2">🧮</span>
               Carbon Footprint Calculator
             </h2>
-            <p className="text-xs text-gray-500 mb-5">Based on the GHG Protocol Corporate Standard</p>
+            <p className="text-xs text-gray-500 mb-5">
+              Based on the GHG Protocol Corporate Standard
+            </p>
 
             <div className="space-y-5">
               {/* ── Scope 1 ── */}
               <div className="rounded-xl border border-orange-200 bg-orange-50/40 p-4">
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="bg-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">Scope 1</span>
-                  <span className="text-sm font-semibold text-orange-800">Direct Emissions</span>
+                  <span className="bg-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                    Scope 1
+                  </span>
+                  <span className="text-sm font-semibold text-orange-800">
+                    Direct Emissions
+                  </span>
                 </div>
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
@@ -522,7 +528,9 @@ function DashboardPageContent() {
                       className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
                       placeholder="e.g., 2"
                     />
-                    <p className="text-xs text-gray-400 mt-1">GWP 2088 — check A/C service records</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      GWP 2088 — check A/C service records
+                    </p>
                   </div>
                 </div>
               </div>
@@ -530,8 +538,12 @@ function DashboardPageContent() {
               {/* ── Scope 2 ── */}
               <div className="rounded-xl border border-blue-200 bg-blue-50/40 p-4">
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">Scope 2</span>
-                  <span className="text-sm font-semibold text-blue-800">Purchased Energy</span>
+                  <span className="bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                    Scope 2
+                  </span>
+                  <span className="text-sm font-semibold text-blue-800">
+                    Purchased Energy
+                  </span>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
@@ -546,19 +558,27 @@ function DashboardPageContent() {
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
                     placeholder="e.g., 5000"
                   />
-                  <p className="text-xs text-gray-400 mt-1">Factor: 0.527 kg CO₂e/kWh (Kenya grid)</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Factor: 0.527 kg CO₂e/kWh (Kenya grid)
+                  </p>
                 </div>
               </div>
 
               {/* ── Scope 3 ── */}
               <div className="rounded-xl border border-purple-200 bg-purple-50/40 p-4">
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="bg-purple-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">Scope 3</span>
-                  <span className="text-sm font-semibold text-purple-800">Value Chain</span>
+                  <span className="bg-purple-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                    Scope 3
+                  </span>
+                  <span className="text-sm font-semibold text-purple-800">
+                    Value Chain
+                  </span>
                 </div>
                 <div className="space-y-3">
                   {/* Flights */}
-                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Business Flights (km/year)</p>
+                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                    Business Flights (km/year)
+                  </p>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-medium text-gray-700 mb-1">
@@ -568,7 +588,9 @@ function DashboardPageContent() {
                         type="number"
                         min={0}
                         value={flightsShort}
-                        onChange={(e) => setFlightsShort(Number(e.target.value))}
+                        onChange={(e) =>
+                          setFlightsShort(Number(e.target.value))
+                        }
                         onFocus={(e) => e.target.select()}
                         className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
                         placeholder="e.g., 5000"
@@ -591,7 +613,9 @@ function DashboardPageContent() {
                   </div>
 
                   {/* Freight */}
-                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mt-1">Freight (tonne-km/month)</p>
+                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mt-1">
+                    Freight (tonne-km/month)
+                  </p>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-medium text-gray-700 mb-1">
@@ -624,7 +648,9 @@ function DashboardPageContent() {
                   </div>
 
                   {/* Waste */}
-                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mt-1">Waste generated (kg/month)</p>
+                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mt-1">
+                    Waste generated (kg/month)
+                  </p>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-medium text-gray-700 mb-1">
@@ -634,7 +660,9 @@ function DashboardPageContent() {
                         type="number"
                         min={0}
                         value={wasteLandfill}
-                        onChange={(e) => setWasteLandfill(Number(e.target.value))}
+                        onChange={(e) =>
+                          setWasteLandfill(Number(e.target.value))
+                        }
                         onFocus={(e) => e.target.select()}
                         className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
                         placeholder="e.g., 500"
@@ -648,7 +676,9 @@ function DashboardPageContent() {
                         type="number"
                         min={0}
                         value={wasteRecycled}
-                        onChange={(e) => setWasteRecycled(Number(e.target.value))}
+                        onChange={(e) =>
+                          setWasteRecycled(Number(e.target.value))
+                        }
                         onFocus={(e) => e.target.select()}
                         className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
                         placeholder="e.g., 200"
@@ -657,7 +687,9 @@ function DashboardPageContent() {
                   </div>
 
                   {/* Supply chain spend */}
-                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mt-1">Supply Chain</p>
+                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mt-1">
+                    Supply Chain
+                  </p>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
                       Spend on goods &amp; services (USD/month)
@@ -666,12 +698,16 @@ function DashboardPageContent() {
                       type="number"
                       min={0}
                       value={supplyChainSpend}
-                      onChange={(e) => setSupplyChainSpend(Number(e.target.value))}
+                      onChange={(e) =>
+                        setSupplyChainSpend(Number(e.target.value))
+                      }
                       onFocus={(e) => e.target.select()}
                       className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
                       placeholder="e.g., 10000"
                     />
-                    <p className="text-xs text-gray-400 mt-1">Spend-based: 0.308 kg CO₂e per USD (EPA USEEIO)</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Spend-based: 0.308 kg CO₂e per USD (EPA USEEIO)
+                    </p>
                   </div>
                 </div>
               </div>
@@ -702,11 +738,15 @@ function DashboardPageContent() {
               <div className="space-y-5">
                 {/* Total */}
                 <div className="text-center bg-gradient-to-br from-terra-50 to-green-50 rounded-xl p-6 border-2 border-terra-200">
-                  <p className="text-sm text-gray-600 mb-1">Total Annual Emissions</p>
+                  <p className="text-sm text-gray-600 mb-1">
+                    Total Annual Emissions
+                  </p>
                   <div className="text-5xl font-bold text-terra-600">
                     {result.annual_tco2e.toFixed(1)}
                   </div>
-                  <div className="text-gray-600 mt-1 font-medium">tCO₂e per year</div>
+                  <div className="text-gray-600 mt-1 font-medium">
+                    tCO₂e per year
+                  </div>
                   <div className="text-xs text-gray-400 mt-1">
                     ({result.monthly_tco2e.toFixed(2)} tCO₂e / month)
                   </div>
@@ -715,50 +755,113 @@ function DashboardPageContent() {
                 {/* Scope summary cards */}
                 <div className="grid grid-cols-3 gap-2">
                   <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-center">
-                    <div className="text-xs font-bold text-orange-600 mb-1">Scope 1</div>
-                    <div className="text-xl font-bold text-orange-800">{(result.scope1_tco2e ?? 0).toFixed(1)}</div>
+                    <div className="text-xs font-bold text-orange-600 mb-1">
+                      Scope 1
+                    </div>
+                    <div className="text-xl font-bold text-orange-800">
+                      {(result.scope1_tco2e ?? 0).toFixed(1)}
+                    </div>
                     <div className="text-xs text-orange-500">tCO₂e</div>
                   </div>
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
-                    <div className="text-xs font-bold text-blue-600 mb-1">Scope 2</div>
-                    <div className="text-xl font-bold text-blue-800">{(result.scope2_tco2e ?? 0).toFixed(1)}</div>
+                    <div className="text-xs font-bold text-blue-600 mb-1">
+                      Scope 2
+                    </div>
+                    <div className="text-xl font-bold text-blue-800">
+                      {(result.scope2_tco2e ?? 0).toFixed(1)}
+                    </div>
                     <div className="text-xs text-blue-500">tCO₂e</div>
                   </div>
                   <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-center">
-                    <div className="text-xs font-bold text-purple-600 mb-1">Scope 3</div>
-                    <div className="text-xl font-bold text-purple-800">{(result.scope3_tco2e ?? 0).toFixed(1)}</div>
+                    <div className="text-xs font-bold text-purple-600 mb-1">
+                      Scope 3
+                    </div>
+                    <div className="text-xl font-bold text-purple-800">
+                      {(result.scope3_tco2e ?? 0).toFixed(1)}
+                    </div>
                     <div className="text-xs text-purple-500">tCO₂e</div>
                   </div>
                 </div>
 
                 {/* Detailed source breakdown */}
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-700 mb-2">Source Breakdown</h3>
+                  <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                    Source Breakdown
+                  </h3>
                   <div className="space-y-1.5">
                     {[
-                      { label: "⚡ Electricity", value: result.electricity_tco2e, scope: 2 },
-                      { label: "⛽ Fuel combustion", value: result.fuel_tco2e, scope: 1 },
-                      { label: "🔥 Natural gas", value: result.natural_gas_tco2e, scope: 1 },
-                      { label: "❄️ Refrigerants", value: result.refrigerant_tco2e, scope: 1 },
-                      { label: "✈️ Business flights", value: result.flights_tco2e, scope: 3 },
-                      { label: "🚚 Road freight", value: result.freight_tco2e, scope: 3 },
-                      { label: "🚢 Sea freight", value: result.freight_sea_tco2e, scope: 3 },
-                      { label: "🗑️ Waste", value: result.waste_tco2e, scope: 3 },
-                      { label: "💧 Water", value: result.water_tco2e, scope: 3 },
-                      { label: "🏭 Supply chain", value: result.supply_chain_tco2e, scope: 3 },
+                      {
+                        label: "⚡ Electricity",
+                        value: result.electricity_tco2e,
+                        scope: 2,
+                      },
+                      {
+                        label: "⛽ Fuel combustion",
+                        value: result.fuel_tco2e,
+                        scope: 1,
+                      },
+                      {
+                        label: "🔥 Natural gas",
+                        value: result.natural_gas_tco2e,
+                        scope: 1,
+                      },
+                      {
+                        label: "❄️ Refrigerants",
+                        value: result.refrigerant_tco2e,
+                        scope: 1,
+                      },
+                      {
+                        label: "✈️ Business flights",
+                        value: result.flights_tco2e,
+                        scope: 3,
+                      },
+                      {
+                        label: "🚚 Road freight",
+                        value: result.freight_tco2e,
+                        scope: 3,
+                      },
+                      {
+                        label: "🚢 Sea freight",
+                        value: result.freight_sea_tco2e,
+                        scope: 3,
+                      },
+                      {
+                        label: "🗑️ Waste",
+                        value: result.waste_tco2e,
+                        scope: 3,
+                      },
+                      {
+                        label: "💧 Water",
+                        value: result.water_tco2e,
+                        scope: 3,
+                      },
+                      {
+                        label: "🏭 Supply chain",
+                        value: result.supply_chain_tco2e,
+                        scope: 3,
+                      },
                     ]
                       .filter((row) => row.value > 0)
                       .map((row) => {
-                        const pct = result.annual_tco2e > 0 ? (row.value / result.annual_tco2e) * 100 : 0;
+                        const pct =
+                          result.annual_tco2e > 0
+                            ? (row.value / result.annual_tco2e) * 100
+                            : 0;
                         const barColor =
-                          row.scope === 1 ? "bg-orange-400" : row.scope === 2 ? "bg-blue-400" : "bg-purple-400";
+                          row.scope === 1
+                            ? "bg-orange-400"
+                            : row.scope === 2
+                              ? "bg-blue-400"
+                              : "bg-purple-400";
                         return (
                           <div key={row.label}>
                             <div className="flex justify-between text-xs mb-0.5">
                               <span className="text-gray-700">{row.label}</span>
                               <span className="font-semibold text-gray-800">
                                 {row.value.toFixed(2)} t &nbsp;
-                                <span className="text-gray-400">({pct.toFixed(0)}%)</span>
+                                <span className="text-gray-400">
+                                  ({pct.toFixed(0)}%)
+                                </span>
                               </span>
                             </div>
                             <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
