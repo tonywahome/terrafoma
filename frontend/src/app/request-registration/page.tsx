@@ -118,7 +118,7 @@ function RequestRegistrationContent() {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8002"}/api/registration/request`,
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/registration/request`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

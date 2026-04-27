@@ -54,8 +54,8 @@ export default function AdminRegistrationsPage() {
     try {
       setLoading(true);
       const url = filter === "all" 
-        ? "http://localhost:8002/api/registration/requests"
-        : `http://localhost:8002/api/registration/requests?status=${filter}`;
+        ? "http://localhost:8000/api/registration/requests"
+        : `http://localhost:8000/api/registration/requests?status=${filter}`;
       
       const response = await fetch(url);
       

@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(netstat -ano)",
+      "Bash(grep -v ' 0$')",
+      "Bash(curl -s http://localhost:8002/health)",
+      "Bash(curl -s http://localhost:3000 -o /dev/null -w \"Frontend HTTP %{http_code}\\\\n\")",
+      "Bash(curl -s http://localhost:3001 -o /dev/null -w \"Frontend HTTP %{http_code}\\\\n\")"
+    ]
+  }
+}

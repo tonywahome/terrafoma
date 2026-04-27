@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8002";
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
     // Create the transaction record in the TerraFoma backend
     const txRes = await fetch(`${apiUrl}/api/transactions`, {

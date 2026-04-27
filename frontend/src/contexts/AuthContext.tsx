@@ -53,12 +53,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string) => {
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8002"}/api/auth/login`,
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/auth/login`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password }),
-        }
+        },
       );
 
       if (!response.ok) {
@@ -81,12 +81,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signup = async (data: SignupData) => {
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8002"}/api/auth/signup`,
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/auth/signup`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
-        }
+        },
       );
 
       if (!response.ok) {

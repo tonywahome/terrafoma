@@ -4,6 +4,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css";
 import Navbar from "@/components/Navbar";
 import { AuthProvider } from "@/contexts/AuthContext";
+import DevExtensionErrorGuard from "@/components/DevExtensionErrorGuard";
 
 export const metadata: Metadata = {
   title: "TerraFoma - AI Carbon Credit Verification",
@@ -20,6 +21,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="bg-gray-50 min-h-screen">
         <AuthProvider>
+          <DevExtensionErrorGuard />
           <Navbar />
           <main>{children}</main>
         </AuthProvider>
