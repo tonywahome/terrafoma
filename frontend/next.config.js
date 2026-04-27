@@ -10,14 +10,17 @@ const nextConfig = {
       (process.env.NODE_ENV === 'production'
         ? 'https://terrafoma-api-production-58dc.up.railway.app'
         : 'http://localhost:8002');
-    return [
-      {
-        // Only rewrite paths that are NOT served by Next.js route handlers
-        // (e.g. /api/confirm-payment, /api/webhooks stay local)
-        source: '/api/:path*',
-        destination: `${backendUrl}/api/:path*`,
-      },
-    ];
+    return {
+      // afterFiles: only proxy to backend if no local Next.js route handler matches.
+      // This ensures /api/config, /api/checkout, /api/confirm-payment, /api/webhooks
+      // are served by their local route handlers, not forwarded to FastAPI.
+      afterFiles: [
+        {
+          source: '/api/:path*',
+          destination: `${backendUrl}/api/:path*`,
+        },
+      ],
+    };
   },
 
   // Optimize for production deployment
