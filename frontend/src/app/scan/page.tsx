@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import mapboxgl from "mapbox-gl";
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
+import "mapbox-gl/dist/mapbox-gl.css";
+import "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css";
 import IntegrityBadge from "@/components/IntegrityBadge";
 import RiskGauge from "@/components/RiskGauge";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -22,47 +24,48 @@ function ScanPageContent() {
   const [ownerInfo, setOwnerInfo] = useState<any>(null);
 
   useEffect(() => {
-    console.log(
-      "useEffect running, mapContainer:",
-      mapContainer.current ? "exists" : "null",
-      "map:",
-      map.current ? "exists" : "null",
-    );
+    if (map.current) return;
+    if (!mapContainer.current) return;
 
-    if (map.current) {
-      console.log("Map already initialized, skipping");
-      return;
-    }
-
-    if (!mapContainer.current) {
-      console.log("Map container not ready yet");
-      return;
-    }
-
-    const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
-    console.log("Mapbox token loaded:", mapboxToken ? "YES" : "NO");
-    if (mapboxToken) {
-      console.log("Token starts with:", mapboxToken.substring(0, 20) + "...");
-    }
-
-    if (!mapboxToken) {
-      console.error("Mapbox token not found in environment");
-      return;
-    }
-
-    console.log("Initializing Mapbox map...");
-    mapboxgl.accessToken = mapboxToken;
-
-    try {
-      const mapInstance = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: "mapbox://styles/mapbox/satellite-streets-v12",
-        center: [36.8, -0.4],
-        zoom: 12,
+    // Fetch token at runtime from server-side API route — avoids build-time baking
+    fetch('/api/config')
+      .then(r => r.json())
+      .then((config) => {
+        console.log('=== CLIENT CONFIG DEBUG ===');
+        console.log('Full config response:', config);
+        console.log('Token length:', config.mapboxToken?.length || 0);
+        console.log('Debug info:', config.debug);
+        console.log('==========================');
+        
+        const { mapboxToken } = config;
+        if (!mapboxToken) {
+          console.error('❌ Mapbox token not configured - token is empty or undefined');
+          console.error('This usually means NEXT_PUBLIC_MAPBOX_TOKEN is not set in Railway');
+          alert('Map configuration error: Mapbox token not found. Please contact administrator.');
+          return;
+        }
+        // @ts-ignore
+        mapboxgl.workerUrl = '/mapbox-gl-csp-worker.js';
+        mapboxgl.accessToken = mapboxToken;
+        console.log('✓ Mapbox token set successfully');
+        initMap();
+      })
+      .catch(err => {
+        console.error('Failed to load config:', err);
+        alert('Failed to load map configuration. Please refresh the page.');
       });
 
+    function initMap() {
+      if (!mapContainer.current) return;
+      try {
+        const mapInstance = new mapboxgl.Map({
+          container: mapContainer.current,
+          style: "mapbox://styles/mapbox/satellite-streets-v12",
+          center: [36.8, -0.4],
+          zoom: 12,
+        });
+
       map.current = mapInstance;
-      console.log("Mapbox map instance created successfully");
 
       const drawInstance = new MapboxDraw({
         displayControlsDefault: false,
@@ -138,8 +141,9 @@ function ScanPageContent() {
       mapInstance.on("error", (e) => {
         console.error("Mapbox error:", e);
       });
-    } catch (error) {
-      console.error("Failed to initialize Mapbox:", error);
+      } catch (error) {
+        console.error("Failed to initialize Mapbox:", error);
+      }
     }
 
     return () => {
@@ -198,7 +202,11 @@ function ScanPageContent() {
         // Look up user by email to get their user_id
         try {
           const userResponse = await fetch(
+<<<<<<< HEAD
             `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/auth/user-by-email?email=${encodeURIComponent(storedOwnerInfo.email)}`,
+=======
+            `/api/auth/user-by-email?email=${encodeURIComponent(storedOwnerInfo.email)}`
+>>>>>>> da550345cc51c621932513e1e9514dc23123e850
           );
           if (userResponse.ok) {
             const userData = await userResponse.json();

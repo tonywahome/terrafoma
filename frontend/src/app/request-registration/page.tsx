@@ -31,21 +31,43 @@ function RequestRegistrationContent() {
     if (map.current) return;
     if (!mapContainer.current) return;
 
-    const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
-    if (!mapboxToken) {
-      console.error("Mapbox token not found");
-      return;
-    }
-
-    mapboxgl.accessToken = mapboxToken;
-
-    try {
-      const mapInstance = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: "mapbox://styles/mapbox/satellite-streets-v12",
-        center: [36.8, -0.4], // Kenya
-        zoom: 10,
+    // Fetch token at runtime from server-side API route — avoids build-time baking
+    fetch('/api/config')
+      .then(r => r.json())
+      .then((config) => {
+        console.log('=== CLIENT CONFIG DEBUG ===');
+        console.log('Full config response:', config);
+        console.log('Token length:', config.mapboxToken?.length || 0);
+        console.log('Debug info:', config.debug);
+        console.log('==========================');
+        
+        const { mapboxToken } = config;
+        if (!mapboxToken) {
+          console.error('❌ Mapbox token not configured - token is empty or undefined');
+          console.error('This usually means NEXT_PUBLIC_MAPBOX_TOKEN is not set in Railway');
+          alert('Map configuration error: Mapbox token not found. Please contact administrator.');
+          return;
+        }
+        // @ts-ignore
+        mapboxgl.workerUrl = '/mapbox-gl-csp-worker.js';
+        mapboxgl.accessToken = mapboxToken;
+        console.log('✓ Mapbox token set successfully');
+        initMap();
+      })
+      .catch(err => {
+        console.error('Failed to load config:', err);
+        alert('Failed to load map configuration. Please refresh the page.');
       });
+
+    function initMap() {
+      if (!mapContainer.current) return;
+      try {
+        const mapInstance = new mapboxgl.Map({
+          container: mapContainer.current,
+          style: "mapbox://styles/mapbox/satellite-streets-v12",
+          center: [36.8, -0.4],
+          zoom: 10,
+        });
 
       map.current = mapInstance;
 
@@ -70,8 +92,9 @@ function RequestRegistrationContent() {
       mapInstance.on("load", () => {
         console.log("Map loaded successfully!");
       });
-    } catch (error) {
-      console.error("Failed to initialize Mapbox:", error);
+      } catch (error) {
+        console.error("Failed to initialize Mapbox:", error);
+      }
     }
 
     return () => {
@@ -118,7 +141,11 @@ function RequestRegistrationContent() {
 
     try {
       const response = await fetch(
+<<<<<<< HEAD
         `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/registration/request`,
+=======
+        `/api/registration/request`,
+>>>>>>> da550345cc51c621932513e1e9514dc23123e850
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

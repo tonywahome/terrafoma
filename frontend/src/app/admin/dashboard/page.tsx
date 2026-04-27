@@ -70,7 +70,11 @@ function AdminDashboardContent() {
       setLoading(true);
 
       // Fetch registration requests
+<<<<<<< HEAD
       const requests = await fetch("http://localhost:8000/api/registration/requests").then(r => r.json());
+=======
+      const requests = await fetch(`/api/registration/requests`).then(r => r.json());
+>>>>>>> da550345cc51c621932513e1e9514dc23123e850
       
       // Fetch credit stats
       const creditStats: any = await api.getCreditStats();

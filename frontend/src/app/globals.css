@@ -2,19 +2,44 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: system-ui, -apple-system, sans-serif;
+/* ── Design tokens ───────────────────────────────────────── */
+:root {
+  /* Surfaces */
+  --color-surface:        #ffffff;
+  --color-surface-subtle: #f6faf6;
+  --color-surface-muted:  #e8f0e9;
+
+  /* Borders */
+  --color-border:         #d1e0d3;
+
+  /* Text */
+  --color-text-primary:   #0f1f12;
+  --color-text-secondary: #3d5c42;
+  --color-text-muted:     #6b8c72;
+
+  /* Risk */
+  --color-risk-low:       #15803d;
+  --color-risk-medium:    #c9820a;
+  --color-risk-high:      #b42318;
 }
 
+/* ── Base ────────────────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
+  color: var(--color-text-primary);
+  background: var(--color-surface-subtle);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Animations ──────────────────────────────────────────── */
 @keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(32px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes fadeIn {
@@ -22,23 +47,51 @@ body {
   to   { opacity: 1; }
 }
 
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
 .animate-fade-up {
   animation: fadeUp 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-
 .animate-fade-up-delay-1 {
   animation: fadeUp 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
 }
-
 .animate-fade-up-delay-2 {
   animation: fadeUp 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.4s both;
 }
-
+.animate-fade-up-delay-3 {
+  animation: fadeUp 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.6s both;
+}
 .animate-fade-in {
   animation: fadeIn 1.2s ease both;
 }
+.animate-slide-in-right {
+  animation: slideInRight 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.animate-scale-in {
+  animation: scaleIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
 
+/* ── Map ─────────────────────────────────────────────────── */
 .mapboxgl-map {
   width: 100%;
   height: 100%;
 }
+
+/* ── Scrollbar (subtle) ──────────────────────────────────── */
+::-webkit-scrollbar          { width: 5px; height: 5px; }
+::-webkit-scrollbar-track    { background: transparent; }
+::-webkit-scrollbar-thumb    { background: var(--color-border); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #a8c4ab; }

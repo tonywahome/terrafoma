@@ -41,7 +41,11 @@ export default function LandownerDashboard() {
 
       // Fetch notifications
       const notifResponse = await fetch(
+<<<<<<< HEAD
         `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/notifications?user_id=${user.id}`
+=======
+        `/api/notifications?user_id=${user.id}`
+>>>>>>> da550345cc51c621932513e1e9514dc23123e850
       );
       if (notifResponse.ok) {
         const data = await notifResponse.json();
