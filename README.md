@@ -1,20 +1,21 @@
-[https://docs.google.com/presentation/d/18c7yJ2kd2ViIEpvWadIm27Vrxt4WoS2w/edit?usp=sharing&ouid=113356697071084537493&rtpof=true&sd=true] TerraFoma Slides
+[https://drive.google.com/file/d/15r4aqu0XPysHR5eTvXUnuMvMmaVbKFv0/view?usp=sharing] TerraFoma Slides
 
-# 🌍 TerraFoma
+# TerraFoma
 
 **Empowering local economies through transparent, AI-verified carbon credits**
 
 TerraFoma is a comprehensive carbon credit platform that connects landowners directly with carbon markets through AI-powered satellite-based land analysis. Built with modern web technologies and machine learning, TerraFoma provides an end-to-end solution for carbon credit generation, verification, approval, and marketplace trading.
 
-## 🎯 Project Overview
+## Project Overview
 
 TerraFoma bridges the gap between landowners and carbon markets by:
+
 - **Automated Verification**: AI-powered satellite analysis using Google Earth Engine
 - **Direct Connection**: Landowners register land → Admin verifies → Landowner approves → Instant marketplace listing
-- **Transparent Pricing**: Dynamic pricing based on quality metrics 
+- **Transparent Pricing**: Dynamic pricing based on quality metrics
 - **Real-time Tracking**: Complete workflow management with notifications and dashboard analytics
 
-## 📑 Table of Contents
+## Table of Contents
 
 - [Key Features](#-key-features)
 - [User Workflows](#-user-workflows)
@@ -36,41 +37,47 @@ TerraFoma bridges the gap between landowners and carbon markets by:
 - [Acknowledgments](#-acknowledgments)
 - [Contact](#-contact)
 
-## ✨ Key Features
+## Key Features
 
-### � **Multi-Role System**
+### **Multi-Role System**
+
 - **Landowners**: Register land with interactive map polygon drawing, receive notifications for scans, approve/reject carbon credit listings
 - **Admin**: Review registration requests, perform AI-powered land scans, manage system operations through comprehensive dashboard
 - **Business**: Browse marketplace, purchase carbon credits, track carbon offset impact
 
-### 🗺️ **Interactive Land Registration**
+### **Interactive Land Registration**
+
 - Draw land boundaries directly on satellite map using Mapbox
 - Automatic area calculation from polygon coordinates
 - Geometry data captured and stored for precise scanning
 - Admin receives requests with pre-loaded land boundaries
 
-### 🛰️ **AI-Powered Satellite Analysis**
+### **AI-Powered Satellite Analysis**
+
 - Automated biomass estimation using Google Earth Engine and Sentinel-2 imagery
 - Machine learning model trained on 9,000+ GEDI LiDAR samples from Congo Basin
 - Real-time predictions with R²=0.53 and MAE=19.3 tonnes/ha
 - Generates carbon credits with integrity scoring and risk assessment
 
-### 🔔 **Complete Notification System**
+### **Complete Notification System**
+
 - Real-time notifications for landowners when scans are complete
 - Approval workflow: Landowners review scan results before marketplace listing
 - Confirmation notifications after approval/rejection decisions
 - Notification center with unread counts and filtering
 
-### 🏪 **Dynamic Carbon Marketplace**
+### **Dynamic Carbon Marketplace**
+
 - Browse verified carbon credits by status (listed, sold, retired)
 - Quality-based pricing tiers: Premium ($35), Standard ($18), Basic ($12)
 - Detailed project information with satellite imagery and location data
 - Filter and sort by price, quantity, integrity score
 - Integrated payment processing with Polar.sh
 
-### 📊 **Comprehensive Dashboards**
+### **Comprehensive Dashboards**
 
 **Admin Dashboard:**
+
 - Registration request statistics and status tracking
 - Carbon credit metrics (total, pending approval, listed, sold)
 - System health monitoring
@@ -78,20 +85,23 @@ TerraFoma bridges the gap between landowners and carbon markets by:
 - Visual charts for data distribution
 
 **Business Dashboard:**
+
 - Global emissions tracking and carbon footprint calculator
 - Credit marketplace overview
 - Portfolio management
 - Impact measurement tools
 
 **Landowner Dashboard:**
+
 - Pending scan notifications
 - Approval/rejection interface
 - Transaction history
 - Credit status tracking
 
-## 🔄 User Workflows
+## User Workflows
 
 ### Landowner Journey
+
 1. **Register**: Sign up and draw land boundaries on interactive map
 2. **Submit**: Submit registration request with land details (location, size, type, geometry)
 3. **Wait**: Admin reviews and processes the request
@@ -102,6 +112,7 @@ TerraFoma bridges the gap between landowners and carbon markets by:
 8. **Track**: Monitor credit status and transactions through dashboard
 
 ### Admin Journey
+
 1. **Review Requests**: View pending land registration requests
 2. **Auto-Scan**: Click to scan - land geometry pre-loaded from landowner submission
 3. **AI Analysis**: System performs satellite-based biomass estimation
@@ -111,6 +122,7 @@ TerraFoma bridges the gap between landowners and carbon markets by:
 7. **Manage**: View system statistics and pending approvals
 
 ### Business Journey
+
 1. **Browse**: Explore marketplace for available carbon credits
 2. **Filter**: Sort by price, quality, location, quantity
 3. **Review**: View detailed project information and satellite imagery
@@ -118,14 +130,15 @@ TerraFoma bridges the gap between landowners and carbon markets by:
 5. **Track**: Monitor carbon offset impact through dashboard
 6. **Certificate**: Receive digital verification certificate
 
-## 🏗️ Architecture
+## Architecture
 
 ### Tech Stack
+
 - **Backend:** FastAPI (Python 3.13) with async/await
 - **Frontend:** Next.js 14.2 + React 18 + TypeScript 5.7
 - **Styling:** Tailwind CSS 3.4 with custom theme
 - **ML Framework:** scikit-learn + XGBoost for biomass prediction
-- **Geospatial:** 
+- **Geospatial:**
   - Google Earth Engine for satellite imagery analysis
   - Mapbox GL JS 3.9 + Mapbox Draw 1.5 for interactive mapping
   - PostGIS for geometry storage
@@ -339,6 +352,7 @@ cp ../.env.example .env
 ```
 
 Edit `.env` and add your credentials:
+
 ```env
 # Supabase (Required)
 SUPABASE_URL=https://your-project.supabase.co
@@ -374,6 +388,7 @@ cp .env.example .env.local
 ```
 
 Edit `.env.local`:
+
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8002
 NEXT_PUBLIC_MAPBOX_TOKEN=your_mapbox_token_here
@@ -396,15 +411,16 @@ npm run dev
 The system supports three user roles. Create accounts through the registration page or use sample data:
 
 **Test Credentials** (if you loaded sample_data.sql):
+
 ```
 Landowner:
   Email: orpheus@terrafoma.com
   Password: password123
-  
+
 Admin:
   Email: admin@terrafoma.com
   Password: admin123
-  
+
 Business:
   Email: business@terrafoma.com
   Password: business123
@@ -439,6 +455,7 @@ Business:
 The Supabase PostgreSQL database includes:
 
 ### Tables
+
 - **`users`**: User accounts with role-based access (admin, landowner, business)
 - **`registration_requests`**: Land registration submissions with geometry data
 - **`land_plots`**: Verified land parcels with geospatial data
@@ -449,6 +466,7 @@ The Supabase PostgreSQL database includes:
 - **`audit_log`**: System activity logging
 
 ### Key Features
+
 - **Row-Level Security (RLS)**: Automatic data access control based on user role
 - **PostGIS Extension**: Geospatial queries for land parcels
 - **Automatic Timestamps**: `created_at` and `updated_at` fields
@@ -456,6 +474,7 @@ The Supabase PostgreSQL database includes:
 - **Indexes**: Optimized queries on frequently accessed fields
 
 ### Credit Status Workflow
+
 ```
 Registration → Scan → pending_approval → listed → sold/retired
                               ↓
@@ -469,6 +488,7 @@ Registration → Scan → pending_approval → listed → sold/retired
 **Algorithm:** Random Forest Regressor (200 trees)
 
 **Performance Metrics:**
+
 - **Test R²:** 0.53 (Explains 53% of variance)
 - **MAE:** 19.3 tonnes/hectare (Mean Absolute Error)
 - **RMSE:** 27.8 tonnes/hectare
@@ -476,12 +496,14 @@ Registration → Scan → pending_approval → listed → sold/retired
 - **Model Size:** 15 MB (serialized with pickle)
 
 **Input Features (18 total):**
+
 - **Spectral Bands** (10): Sentinel-2 B1-B8, B11-B12
 - **Vegetation Indices** (4): NDVI, EVI, SAVI, NDMI
 - **Topographic** (2): Elevation, Slope
 - **Temporal**: Median aggregation over dry season (reduces cloud interference)
 
 **Training Data Sources:**
+
 1. **Sentinel-2 L2A**: 10-20m resolution multispectral imagery
 2. **GEDI L4A**: Space-based LiDAR biomass measurements (1km footprints)
 3. **SRTM DEM**: 30m resolution elevation data
@@ -491,6 +513,7 @@ Registration → Scan → pending_approval → listed → sold/retired
 ### Data Collection Pipeline
 
 Scripts for collecting training data:
+
 - `collect_sentinel_data.py`: Fetches Sentinel-2 features via Google Earth Engine
 - `collect_gedi_data.py`: Downloads GEDI biomass measurements
 - Training data: `backend/ml/data/sentinel_gedi_training.csv` (9,001 samples)
@@ -498,6 +521,7 @@ Scripts for collecting training data:
 ### Retraining the Model
 
 The Jupyter notebook `train_biomass_model.ipynb` provides:
+
 - Data preprocessing and feature engineering
 - Model selection (comparing RF, XGBoost, Linear)
 - Hyperparameter tuning with GridSearchCV
@@ -508,6 +532,7 @@ The Jupyter notebook `train_biomass_model.ipynb` provides:
 ## 🎯 API Endpoints
 
 ### Authentication
+
 ```
 POST /api/auth/register      # Create new user account
 POST /api/auth/login         # Authenticate and get user session
@@ -515,6 +540,7 @@ GET  /api/auth/me            # Get current user profile
 ```
 
 ### Land Registration
+
 ```
 GET  /api/registration/requests              # List all requests (admin)
 GET  /api/registration/requests?status=pending  # Filter by status
@@ -522,6 +548,7 @@ POST /api/registration/request               # Submit registration (landowner)
 ```
 
 ### Scanning & Credits
+
 ```
 POST /api/scan                     # Perform AI satellite scan (admin)
 GET  /api/credits                  # List all carbon credits
@@ -531,12 +558,14 @@ GET  /api/credits/stats            # Get marketplace statistics
 ```
 
 ### Landowner Workflow
+
 ```
 GET  /api/landowner/pending-scans  # Get scans awaiting approval
 POST /api/landowner/approve-listing # Approve/reject carbon credit
 ```
 
 ### Notifications
+
 ```
 GET  /api/notifications?user_id={id}  # Get user notifications
 POST /api/notifications/{id}/read     # Mark as read
@@ -544,6 +573,7 @@ GET  /api/notifications/unread-count  # Get unread count
 ```
 
 ### Marketplace & Transactions
+
 ```
 GET  /api/credits?status=listed    # Browse marketplace
 POST /api/transactions             # Purchase carbon credit
@@ -551,6 +581,7 @@ GET  /api/transactions/history     # Get purchase history
 ```
 
 ### Dashboard Analytics
+
 ```
 GET  /api/dashboard/footprint      # Calculate carbon footprint
 GET  /api/credits/stats            # Get credit statistics
@@ -559,6 +590,7 @@ GET  /api/credits/stats            # Get credit statistics
 ### Example: Scan Land Parcel
 
 **Request:**
+
 ```bash
 curl -X POST http://localhost:8002/api/scan \
   -H "Content-Type: application/json" \
@@ -577,6 +609,7 @@ curl -X POST http://localhost:8002/api/scan \
 ```
 
 **Response:**
+
 ```json
 {
   "scan_id": "uuid-of-scan",
@@ -617,11 +650,13 @@ Quality Tiers:
 ### Pricing Factors
 
 **Integrity Score (0-100):**
+
 - Baseline MRV quality (40%)
 - Permanence assurance (30%)
 - Leakage risk mitigation (30%)
 
 **Risk Score (0-1):**
+
 - Political/regulatory stability
 - Land tenure security
 - Environmental monitoring capability
@@ -630,6 +665,7 @@ Quality Tiers:
 ### Value Distribution
 
 **Revenue Allocation Example:**
+
 ```
 Sale Price: $22/tonne × 1,000 tCO₂e = $22,000
 
@@ -645,18 +681,20 @@ Total:            $22,000  (100%)
 ### Running the Project
 
 **Development Mode:**
+
 ```bash
 # Terminal 1: Backend
 cd backend
 source ../.venv/bin/activate
 uvicorn main:app --reload --port 8002
 
-# Terminal 2: Frontend  
+# Terminal 2: Frontend
 cd frontend
 npm run dev
 ```
 
 **Production Build:**
+
 ```bash
 # Backend
 cd backend
@@ -671,6 +709,7 @@ npm start
 ### Environment Variables
 
 **Backend (.env):**
+
 ```env
 # Database (Required)
 SUPABASE_URL=https://your-project.supabase.co
@@ -686,6 +725,7 @@ LOG_LEVEL=INFO
 ```
 
 **Frontend (.env.local):**
+
 ```env
 # API Configuration
 NEXT_PUBLIC_API_URL=http://localhost:8002
@@ -703,6 +743,7 @@ NEXT_PUBLIC_POLAR_WEBHOOK_SECRET=your_webhook_secret
 ### Code Quality
 
 **Python Linting:**
+
 ```bash
 cd backend
 black .                  # Format code
@@ -712,6 +753,7 @@ mypy .                   # Type checking
 ```
 
 **TypeScript Checking:**
+
 ```bash
 cd frontend
 npm run lint             # ESLint
@@ -755,6 +797,7 @@ npm run test:e2e
 ### Database (Supabase)
 
 Already production-ready! Free tier includes:
+
 - 500 MB database storage
 - 2 GB file storage
 - 50 MB bandwidth
@@ -766,6 +809,7 @@ Already production-ready! Free tier includes:
 ### Common Issues
 
 **Backend won't start:**
+
 ```bash
 # Check Python version
 python --version  # Should be 3.11+
@@ -778,6 +822,7 @@ lsof -ti:8002 | xargs kill -9  # macOS/Linux
 ```
 
 **Frontend build errors:**
+
 ```bash
 # Clear cache
 rm -rf .next node_modules package-lock.json
@@ -790,6 +835,7 @@ node --version  # Should be 18+
 ```
 
 **Google Earth Engine authentication:**
+
 ```bash
 # Re-authenticate
 earthengine authenticate
@@ -799,12 +845,14 @@ earthengine asset info users/your-username
 ```
 
 **Supabase connection issues:**
+
 - Verify URL and keys in .env
 - Check project is active in Supabase dashboard
 - Ensure RLS policies are enabled
 - Check network/firewall settings
 
 **Map not loading:**
+
 - Verify NEXT_PUBLIC_MAPBOX_TOKEN in .env.local
 - Check Mapbox account is active
 - Ensure token has correct scopes
@@ -820,6 +868,7 @@ earthengine asset info users/your-username
 ## 🎨 Key Technologies
 
 ### Frontend Stack
+
 - **Next.js 14.2**: React framework with App Router, Server Components, and API routes
 - **React 18**: Component library with hooks and context API
 - **TypeScript 5.7**: Type-safe development with strict mode
@@ -830,6 +879,7 @@ earthengine asset info users/your-username
 - **React Hook Form**: Form validation and state management
 
 ### Backend Stack
+
 - **FastAPI 0.115**: Modern async Python web framework
 - **Pydantic**: Data validation and serialization
 - **Supabase Client**: PostgreSQL database with realtime subscriptions
@@ -840,6 +890,7 @@ earthengine asset info users/your-username
 - **NumPy**: Numerical computing for ML features
 
 ### DevOps & Tools
+
 - **Git**: Version control with GitHub
 - **npm/pip**: Package management
 - **ESLint/Black**: Code linting and formatting
@@ -880,28 +931,34 @@ earthengine asset info users/your-username
 ### What Makes TerraFoma Unique
 
 ✅ **Complete End-to-End Solution**
+
 - Not just a marketplace or scanner, but full workflow from registration to sale
 
 ✅ **AI-Powered Verification**
+
 - Machine learning model trained on real satellite and LiDAR data
 - Reduces verification costs from thousands to near-zero
 
 ✅ **User-Centric Design**
+
 - Three distinct role-based interfaces (landowner, admin, business)
 - Interactive map-based land registration (draw your boundaries)
 - Real-time notifications and approval workflow
 
 ✅ **Production-Ready Architecture**
+
 - Supabase integration for scalable, persistent storage
 - Row-Level Security for data protection
 - Admin bypass patterns for system operations
 
 ✅ **Modern Tech Stack**
+
 - Latest versions of Next.js, React, FastAPI
 - TypeScript throughout for type safety
 - Responsive design with Tailwind CSS
 
 ✅ **Transparent Pricing**
+
 - Quality-based dynamic pricing algorithm
 - Clear value distribution (60% to landowners)
 - Market-competitive rates ($12-40/tonne)
@@ -909,21 +966,25 @@ earthengine asset info users/your-username
 ### Technical Achievements
 
 🔬 **Machine Learning**
+
 - Successfully trained biomass model on 9,001 samples
 - R²=0.53 performance on test set
 - Real-time predictions in < 5 seconds
 
 🗺️ **Geospatial Integration**
+
 - Google Earth Engine API for satellite imagery
 - Mapbox for interactive mapping
 - PostGIS for geometry storage and queries
 
 🔔 **Real-Time System**
+
 - Notification system with instant delivery
 - Status updates propagate through dashboard
 - Approval workflow with confirmation loop
 
 🔐 **Security**
+
 - Role-based access control (RBAC)
 - Row-Level Security in database
 - Admin bypass for system operations
@@ -962,30 +1023,35 @@ earthengine asset info users/your-username
 ### Planned Features (v2.0) 🔄
 
 **Enhanced Verification:**
+
 - 🔄 Blockchain integration for immutable credit verification
 - 🔄 Integration with Verra and Gold Standard registries
 - 🔄 Multi-temporal monitoring for additionality verification
 - 🔄 Automated change detection from satellite imagery
 
 **Mobile Experience:**
+
 - 🔄 Progressive Web App (PWA) for offline access
 - 🔄 Native mobile apps (iOS/Android) for field verification
 - 🔄 GPS-based boundary capture directly from phone
 - 🔄 Photo upload capability for ground-truthing
 
 **Advanced Analytics:**
+
 - 🔄 Predictive analytics for credit pricing trends
 - 🔄 Portfolio optimization recommendations
 - 🔄 Carbon offset impact visualization
 - 🔄 ESG reporting dashboard for businesses
 
 **Platform Expansion:**
+
 - 🔄 Multi-language support (French, Spanish, Portuguese)
 - 🔄 Support for additional ecosystems (mangroves, wetlands, grasslands)
 - 🔄 Community marketplace for direct landowner-to-business trading
 - 🔄 API for third-party integration
 
 **AI/ML Improvements:**
+
 - 🔄 Ensemble model with XGBoost and Neural Networks
 - 🔄 Region-specific models for better accuracy
 - 🔄 Real-time model retraining with new GEDI data
@@ -1004,6 +1070,7 @@ earthengine asset info users/your-username
 This project was built for demonstration and evaluation purposes. Contributions, issues, and feature requests are welcome!
 
 **Development Workflow:**
+
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
@@ -1011,6 +1078,7 @@ This project was built for demonstration and evaluation purposes. Contributions,
 5. Open a Pull Request
 
 **Code Standards:**
+
 - Follow existing code style and patterns
 - Add TypeScript types for all new code
 - Include docstrings for Python functions
@@ -1026,6 +1094,7 @@ For commercial use or licensing inquiries, please contact the project maintainer
 ## 🙏 Acknowledgments
 
 ### Data & Infrastructure
+
 - **[Google Earth Engine](https://earthengine.google.com/)**: Petabyte-scale satellite imagery and geospatial analysis
 - **[NASA GEDI](https://gedi.umd.edu/)**: Spaceborne LiDAR biomass measurements
 - **[ESA Sentinel-2](https://sentinel.esa.int/)**: Free, open-access multispectral satellite imagery
@@ -1033,18 +1102,21 @@ For commercial use or licensing inquiries, please contact the project maintainer
 - **[Supabase](https://supabase.com/)**: PostgreSQL database with realtime capabilities
 
 ### Scientific Foundation
+
 - **IPCC Guidelines**: Carbon accounting methodologies
 - **UNFCCC**: Framework for carbon credit standards
 - **Verra VCS**: Standards for project verification
 - **FAO Global Forest Resources**: Reference data for biomass allometry
 
 ### Technology Stack
+
 - **[FastAPI](https://fastapi.tiangolo.com/)**: Modern Python web framework
 - **[Next.js](https://nextjs.org/)**: React framework by Vercel
 - **[Tailwind CSS](https://tailwindcss.com/)**: Utility-first CSS framework
 - **[scikit-learn](https://scikit-learn.org/)**: Machine learning in Python
 
 ### Community
+
 - Thank you to all open-source contributors whose work made this project possible
 - Special thanks to the Earth observation and carbon markets communities
 
@@ -1055,6 +1127,7 @@ Built with ❤️ by developers passionate about climate action and technology.
 ## 📞 Contact
 
 For questions, feedback, or collaboration opportunities:
+
 - **GitHub**: [@tonywahome](https://github.com/tonywahome)
 - **Repository**: [TerraFoma](https://github.com/tonywahome/terrafoma)
 - **Email**: [Contact through GitHub]
@@ -1065,7 +1138,7 @@ For questions, feedback, or collaboration opportunities:
 
 **🌍 Built for the planet, powered by technology 🌿**
 
-*Making carbon markets accessible, transparent, and impactful*
+_Making carbon markets accessible, transparent, and impactful_
 
 [Demo](http://localhost:3001) · [Documentation](docs/) · [API](http://localhost:8002/docs) · [Report Bug](https://github.com/tonywahome/terrafoma/issues)
 
