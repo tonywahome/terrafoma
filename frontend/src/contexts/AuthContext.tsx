@@ -52,22 +52,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-<<<<<<< HEAD
       const response = await fetch(`/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-=======
-      const response = await fetch(
-        `/api/auth/login`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        },
-      );
->>>>>>> bf4713268498dc96c3beba5b7bd481d2f3b08f61
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({
@@ -88,22 +77,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signup = async (data: SignupData) => {
     try {
-<<<<<<< HEAD
       const response = await fetch(`/api/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-=======
-      const response = await fetch(
-        `/api/auth/signup`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        },
-      );
->>>>>>> bf4713268498dc96c3beba5b7bd481d2f3b08f61
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({
