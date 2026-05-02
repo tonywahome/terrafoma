@@ -163,7 +163,7 @@ function DashboardPageContent() {
     } catch (err: any) {
       setCalcError(
         err?.message ||
-          "Calculation failed. Is the backend running on port 8000?",
+          "Calculation failed. Please try again.",
       );
     }
     setLoading(false);

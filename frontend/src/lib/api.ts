@@ -97,6 +97,17 @@ export const api = {
       body: JSON.stringify({ user_id: userId }),
     }),
 
+  // Monitoring
+  getPlotsByOwner: (ownerId: string) => fetchAPI(`/api/plots/owner/${ownerId}`),
+  deletePlot: (plotId: string, ownerId: string) =>
+    fetchAPI(`/api/plots/${plotId}?owner_id=${ownerId}`, { method: "DELETE" }),
+  getLatestMonitoring: (plotId: string) => fetchAPI(`/api/monitoring/plots/${plotId}/latest`),
+  getMonitoringHistory: (plotId: string, limit = 52) =>
+    fetchAPI(`/api/monitoring/plots/${plotId}/history?limit=${limit}`),
+  runMonitoringCheck: (plotId: string) =>
+    fetchAPI(`/api/monitoring/plots/${plotId}/run`, { method: "POST" }),
+  getMonitoringSummary: () => fetchAPI("/api/monitoring/summary"),
+
   // Landowner - Pending Scans & Approval
   getPendingScans: (userId: string) =>
     fetchAPI(`/api/landowner/pending-scans?user_id=${userId}`),

@@ -30,10 +30,8 @@ export default function Home() {
             </h1>
 
             <p className="animate-fade-up-delay-1 text-lg md:text-xl text-white/80 mt-7 max-w-2xl mx-auto leading-relaxed drop-shadow">
-              Rwanda's continuous, satellite-driven MRV platform for
-              afforestation, reforestation and agroforestry projects — giving
-              operators, government, and credit buyers one shared source of
-              truth.
+              Rwanda's continuous, satellite-driven Monitoring, Reporting and
+              Verification platform for green projects
             </p>
 
             {!isAuthenticated ? (
