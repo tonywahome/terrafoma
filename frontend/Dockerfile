@@ -18,7 +18,18 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Set environment variables
+# Declare Railway build-time variables so next build can bake NEXT_PUBLIC_* into the bundle.
+# Without ARG declarations, these are invisible to the Docker build step even if set in Railway.
+ARG NEXT_PUBLIC_MAPBOX_TOKEN
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+ENV NEXT_PUBLIC_MAPBOX_TOKEN=$NEXT_PUBLIC_MAPBOX_TOKEN
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
+
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
