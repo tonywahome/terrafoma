@@ -13,49 +13,43 @@ import type { ScanResult } from "@/lib/types";
 
 function ScanPageContent() {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
-  const draw = useRef<MapboxDraw | null>(null);
+  const map          = useRef<mapboxgl.Map | null>(null);
+  const draw         = useRef<MapboxDraw | null>(null);
 
   const [drawnGeometry, setDrawnGeometry] = useState<any>(null);
-  const [scanResult, setScanResult] = useState<ScanResult | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [area, setArea] = useState<number>(0);
-  const [contracted, setContracted] = useState(false);
-  const [ownerInfo, setOwnerInfo] = useState<any>(null);
+  const [scanResult, setScanResult]       = useState<ScanResult | null>(null);
+  const [loading, setLoading]             = useState(false);
+  const [area, setArea]                   = useState<number>(0);
+  const [ownerInfo, setOwnerInfo]         = useState<any>(null);
+  // resolved once on map load — persists even after localStorage is cleared
+  const [resolvedOwnerId, setResolvedOwnerId] = useState<string>("demo-user");
+  const [toast, setToast] = useState<{ type: "success" | "error"; msg: string } | null>(null);
+
+  const showToast = (type: "success" | "error", msg: string) => {
+    setToast({ type, msg });
+    setTimeout(() => setToast(null), 5000);
+  };
 
   useEffect(() => {
     if (map.current) return;
     if (!mapContainer.current) return;
 
-    // Fetch token at runtime from server-side API route — avoids build-time baking
-    fetch('/api/config')
+    fetch("/api/config")
       .then(r => r.json())
-      .then((config) => {
-        console.log('=== CLIENT CONFIG DEBUG ===');
-        console.log('Full config response:', config);
-        console.log('Token length:', config.mapboxToken?.length || 0);
-        console.log('Debug info:', config.debug);
-        console.log('==========================');
-        
+      .then(async (config) => {
         const { mapboxToken } = config;
         if (!mapboxToken) {
-          console.error('❌ Mapbox token not configured - token is empty or undefined');
-          console.error('This usually means NEXT_PUBLIC_MAPBOX_TOKEN is not set in Railway');
-          alert('Map configuration error: Mapbox token not found. Please contact administrator.');
+          showToast("error", "Mapbox token not configured. Contact your administrator.");
           return;
         }
         // @ts-ignore
-        mapboxgl.workerUrl = '/mapbox-gl-csp-worker.js';
+        mapboxgl.workerUrl = "/mapbox-gl-csp-worker.js";
         mapboxgl.accessToken = mapboxToken;
-        console.log('✓ Mapbox token set successfully');
         initMap();
       })
-      .catch(err => {
-        console.error('Failed to load config:', err);
-        alert('Failed to load map configuration. Please refresh the page.');
-      });
+      .catch(() => showToast("error", "Failed to load map configuration. Please refresh."));
 
-    function initMap() {
+    async function initMap() {
       if (!mapContainer.current) return;
       try {
         const mapInstance = new mapboxgl.Map({
@@ -65,93 +59,87 @@ function ScanPageContent() {
           zoom: 12,
         });
 
-      map.current = mapInstance;
+        map.current = mapInstance;
 
-      const drawInstance = new MapboxDraw({
-        displayControlsDefault: false,
-        controls: {
-          polygon: true,
-          trash: true,
-        },
-        defaultMode: "draw_polygon",
-      });
+        const drawInstance = new MapboxDraw({
+          displayControlsDefault: false,
+          controls: { polygon: true, trash: true },
+          defaultMode: "draw_polygon",
+        });
 
-      draw.current = drawInstance;
+        draw.current = drawInstance;
+        mapInstance.addControl(drawInstance);
+        mapInstance.addControl(new mapboxgl.NavigationControl(), "top-right");
 
-      mapInstance.addControl(drawInstance);
-      mapInstance.addControl(new mapboxgl.NavigationControl(), "top-right");
+        mapInstance.on("draw.create", updateArea);
+        mapInstance.on("draw.delete",  updateArea);
+        mapInstance.on("draw.update",  updateArea);
 
-      mapInstance.on("draw.create", updateArea);
-      mapInstance.on("draw.delete", updateArea);
-      mapInstance.on("draw.update", updateArea);
+        mapInstance.on("load", async () => {
+          const storedGeometry  = localStorage.getItem("scanGeometry");
+          const storedOwnerStr  = localStorage.getItem("scanOwnerInfo");
 
-      mapInstance.on("load", () => {
-        console.log("Mapbox map loaded and tiles rendered successfully!");
+          if (storedGeometry && drawInstance) {
+            try {
+              const geometry = JSON.parse(storedGeometry);
+              drawInstance.add({ type: "Feature", geometry, properties: {} } as any);
+              setDrawnGeometry(geometry);
 
-        // Check if there's a geometry from registration request
-        const storedGeometry = localStorage.getItem("scanGeometry");
-        const storedOwnerInfo = localStorage.getItem("scanOwnerInfo");
+              if (geometry.type === "Polygon") {
+                setArea(calculatePolygonArea(geometry.coordinates[0]) * 100);
+              }
 
-        if (storedGeometry && drawInstance) {
-          try {
-            const geometry = JSON.parse(storedGeometry);
-            const feature = {
-              type: "Feature" as const,
-              geometry: geometry,
-              properties: {},
-            };
-
-            // Add the geometry to the map
-            drawInstance.add(feature as any);
-            setDrawnGeometry(geometry);
-
-            // Calculate area
-            if (geometry.type === "Polygon") {
-              const coords = geometry.coordinates[0];
-              const areaKm2 = calculatePolygonArea(coords);
-              setArea(areaKm2 * 100);
+              const coordinates = geometry.coordinates[0];
+              const bounds = coordinates.reduce(
+                (b: any, c: any) => b.extend(c),
+                new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]),
+              );
+              mapInstance.fitBounds(bounds, { padding: 50 });
+            } catch (e) {
+              console.error("Failed to load stored geometry:", e);
             }
-
-            // Set owner info if available
-            if (storedOwnerInfo) {
-              setOwnerInfo(JSON.parse(storedOwnerInfo));
-            }
-
-            // Fit map to the geometry bounds
-            const coordinates = geometry.coordinates[0];
-            const bounds = coordinates.reduce(
-              (bounds: any, coord: any) => {
-                return bounds.extend(coord);
-              },
-              new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]),
-            );
-
-            mapInstance.fitBounds(bounds, { padding: 50 });
-
-            // Clear localStorage after loading
-            localStorage.removeItem("scanGeometry");
-            localStorage.removeItem("scanOwnerInfo");
-            localStorage.removeItem("scanRequestId");
-          } catch (error) {
-            console.error("Failed to load stored geometry:", error);
           }
-        }
-      });
 
-      mapInstance.on("error", (e) => {
-        console.error("Mapbox error:", e);
-      });
-      } catch (error) {
-        console.error("Failed to initialize Mapbox:", error);
+          if (storedOwnerStr) {
+            try {
+              const info = JSON.parse(storedOwnerStr);
+              setOwnerInfo(info);
+
+              // Resolve the real user_id NOW (before localStorage is cleared)
+              // and keep it in state so handleScan can use it later.
+              if (info.email) {
+                const res = await fetch(
+                  `/api/auth/user-by-email?email=${encodeURIComponent(info.email)}`
+                );
+                if (res.ok) {
+                  const userData = await res.json();
+                  if (userData.id) {
+                    setResolvedOwnerId(userData.id);
+                    console.log("Resolved owner_id:", userData.id);
+                  }
+                } else {
+                  console.warn("user-by-email returned", res.status, "— will use demo-user");
+                }
+              }
+            } catch (e) {
+              console.warn("Could not resolve owner from stored info:", e);
+            }
+          }
+
+          // Clear after resolving everything
+          localStorage.removeItem("scanGeometry");
+          localStorage.removeItem("scanOwnerInfo");
+          localStorage.removeItem("scanRequestId");
+        });
+
+        mapInstance.on("error", (e) => console.error("Mapbox error:", e));
+      } catch (e) {
+        console.error("Failed to initialise Mapbox:", e);
       }
     }
 
     return () => {
-      if (map.current) {
-        console.log("Cleaning up map");
-        map.current.remove();
-        map.current = null;
-      }
+      if (map.current) { map.current.remove(); map.current = null; }
     };
   }, []);
 
@@ -160,12 +148,8 @@ function ScanPageContent() {
     if (data && data.features.length > 0) {
       const feature = data.features[0];
       setDrawnGeometry(feature.geometry);
-
-      // Type guard to ensure it's a Polygon geometry
       if (feature.geometry.type === "Polygon") {
-        const coords = (feature.geometry as any).coordinates[0];
-        const areaKm2 = calculatePolygonArea(coords);
-        setArea(areaKm2 * 100);
+        setArea(calculatePolygonArea((feature.geometry as any).coordinates[0]) * 100);
       }
     } else {
       setDrawnGeometry(null);
@@ -181,8 +165,7 @@ function ScanPageContent() {
       const [x2, y2] = coords[i + 1];
       area += x1 * y2 - x2 * y1;
     }
-    area = Math.abs(area / 2);
-    return area * 111 * 111;
+    return Math.abs(area / 2) * 111 * 111;
   }
 
   const handleScan = async () => {
@@ -191,229 +174,274 @@ function ScanPageContent() {
     setScanResult(null);
 
     try {
-      // Get owner_id from stored request info or use demo user
-      const requestId = localStorage.getItem("scanRequestId");
-      const storedOwnerInfoStr = localStorage.getItem("scanOwnerInfo");
-      let ownerId = "demo-user";
-
-      // If we have owner info, try to find the user by email
-      if (storedOwnerInfoStr) {
-        const storedOwnerInfo = JSON.parse(storedOwnerInfoStr);
-        // Look up user by email to get their user_id
-        try {
-          const userResponse = await fetch(
-            `/api/auth/user-by-email?email=${encodeURIComponent(storedOwnerInfo.email)}`
-          );
-          if (userResponse.ok) {
-            const userData = await userResponse.json();
-            ownerId = userData.id;
-          }
-        } catch (err) {
-          console.warn("Could not fetch user by email:", err);
-        }
-      }
-
+      // Use the owner_id resolved during map load (in state, not localStorage which was cleared)
       const result = (await api.runScan({
         geometry: drawnGeometry,
-        owner_id: ownerId,
+        owner_id: resolvedOwnerId,
       })) as ScanResult;
+
       setScanResult(result);
 
-      // Alert admin that notification was sent to landowner
-      if (ownerInfo) {
-        alert(
-          `✅ Scan complete! A notification has been sent to ${ownerInfo.name} (${ownerInfo.email}) to review and approve the results.`,
+      if (ownerInfo && resolvedOwnerId !== "demo-user") {
+        showToast(
+          "success",
+          `Scan complete. Notification sent to ${ownerInfo.name} to review and approve.`
         );
+      } else {
+        showToast("success", "Scan complete.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Scan failed:", err);
-      alert("Scan failed. Make sure the backend is running on port 8000.");
+      showToast("error", err.message || "Scan failed. Check the backend dMRV service is reachable.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
-  const handleAcceptContract = async () => {
-    alert(
-      "This button is for the admin view. Landowners approve via their dashboard under 'Pending Scans'.",
-    );
-  };
+  const totalValue = scanResult
+    ? (scanResult.buy_price_per_tonne * scanResult.estimated_tco2e).toFixed(2)
+    : "0";
 
   return (
     <div className="flex h-[calc(100vh-64px)]">
+      {/* Map */}
       <div className="flex-1 relative">
         <div ref={mapContainer} className="absolute inset-0 w-full h-full" />
       </div>
 
-      <div className="w-96 bg-white border-l overflow-y-auto">
-        <div className="p-6">
-          <h2 className="text-xl font-bold mb-4 text-gray-900">Land Scanner</h2>
-          <p className="text-sm text-gray-500 mb-6">
-            Draw a polygon on the map to select your plot, then run an AI scan
-            to estimate its carbon value using real satellite imagery.
-          </p>
+      {/* Sidebar */}
+      <div className="w-96 bg-[var(--color-surface)] border-l border-[var(--color-border)] overflow-y-auto flex flex-col">
 
+        {/* Toast */}
+        {toast && (
+          <div className={`mx-4 mt-4 px-4 py-3 rounded-xl text-sm font-semibold flex items-center gap-2 ${
+            toast.type === "success"
+              ? "bg-emerald-50 border border-emerald-300 text-emerald-700"
+              : "bg-red-50 border border-red-300 text-red-700"
+          }`}>
+            {toast.type === "success" ? "✓" : "✕"} {toast.msg}
+          </div>
+        )}
+
+        <div className="p-6 flex-1">
+          {/* Header */}
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-lg">🛰️</span>
+              <h2 className="text-xl font-bold text-[var(--color-text-primary)]">Land Scanner</h2>
+            </div>
+            <p className="text-sm text-[var(--color-text-muted)]">
+              Draw a polygon on the map to select a plot, then run a satellite scan to estimate its carbon stock.
+            </p>
+          </div>
+
+          {/* Owner info card */}
           {ownerInfo && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-              <h3 className="font-semibold text-blue-900 mb-2">
-                Registration Request
-              </h3>
-              <div className="text-sm text-blue-800 space-y-1">
-                <p>
-                  <strong>Owner:</strong> {ownerInfo.name}
+            <div className="bg-[var(--color-surface-muted)] border border-[var(--color-border)] rounded-xl p-4 mb-5">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-6 h-6 rounded-full bg-terra-700 text-white text-xs flex items-center justify-center font-bold">
+                  {ownerInfo.name?.charAt(0).toUpperCase() ?? "?"}
+                </div>
+                <p className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)]">
+                  Registration request
                 </p>
-                <p>
-                  <strong>Email:</strong> {ownerInfo.email}
-                </p>
-                <p>
-                  <strong>Location:</strong> {ownerInfo.location}
-                </p>
-                <p>
-                  <strong>Type:</strong> {ownerInfo.type}
-                </p>
+              </div>
+              <div className="space-y-1.5 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-[var(--color-text-muted)]">Owner</span>
+                  <span className="font-semibold text-[var(--color-text-primary)]">{ownerInfo.name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[var(--color-text-muted)]">Email</span>
+                  <span className="font-medium text-[var(--color-text-secondary)] truncate max-w-[180px]">{ownerInfo.email}</span>
+                </div>
+                {ownerInfo.location && (
+                  <div className="flex justify-between">
+                    <span className="text-[var(--color-text-muted)]">Location</span>
+                    <span className="font-medium text-[var(--color-text-secondary)]">{ownerInfo.location}</span>
+                  </div>
+                )}
+              </div>
+              <div className={`mt-2.5 pt-2.5 border-t border-[var(--color-border)] flex items-center gap-1.5 text-xs font-semibold ${
+                resolvedOwnerId !== "demo-user" ? "text-emerald-600" : "text-amber-600"
+              }`}>
+                {resolvedOwnerId !== "demo-user"
+                  ? "✓ Owner ID resolved — notification will reach this user"
+                  : "⚠ Owner ID not resolved — scan will use demo account"}
               </div>
             </div>
           )}
 
           {drawnGeometry ? (
             <div className="space-y-4">
-              <div className="bg-terra-50 rounded-lg p-4">
-                <h3 className="font-semibold text-terra-800">Selected Plot</h3>
-                <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+              {/* Selected plot info */}
+              <div className="bg-[var(--color-surface-muted)] rounded-xl p-4">
+                <p className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-2">Selected plot</p>
+                <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
-                    <span className="text-gray-500">Area:</span>{" "}
-                    <span className="font-medium">{area.toFixed(2)} ha</span>
+                    <div className="text-[var(--color-text-muted)]">Area</div>
+                    <div className="font-bold text-[var(--color-text-primary)]">{area.toFixed(2)} ha</div>
                   </div>
                   <div>
-                    <span className="text-gray-500">Status:</span>{" "}
-                    <span className="font-medium text-green-600">
-                      Ready to scan
-                    </span>
+                    <div className="text-[var(--color-text-muted)]">Status</div>
+                    <div className="font-bold text-emerald-600">Ready to scan</div>
                   </div>
                 </div>
               </div>
 
+              {/* Scan button */}
               {!scanResult && (
                 <button
                   onClick={handleScan}
                   disabled={loading}
-                  className="w-full bg-terra-600 text-white py-3 rounded-lg font-semibold hover:bg-terra-700 disabled:opacity-50 transition"
+                  className="w-full bg-terra-700 text-white py-3 rounded-xl font-semibold hover:bg-terra-800 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
                 >
-                  {loading ? "Scanning with AI Model..." : "🛰️ Run AI Scan"}
+                  {loading ? (
+                    <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Scanning…</>
+                  ) : (
+                    "🛰️  Run satellite scan"
+                  )}
                 </button>
               )}
 
+              {/* Loading state */}
               {loading && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                    <span className="font-semibold text-blue-900">
-                      Processing...
-                    </span>
-                  </div>
-                  <ul className="space-y-1 text-blue-700 ml-6">
-                    <li>• Extracting Sentinel-2 imagery</li>
-                    <li>• Calculating vegetation indices (NDVI, EVI, SAVI)</li>
-                    <li>• Running Random Forest model</li>
-                    <li>• Estimating carbon stock</li>
+                <div className="bg-[var(--color-surface-muted)] border border-[var(--color-border)] rounded-xl p-4 text-sm">
+                  <p className="font-semibold text-[var(--color-text-primary)] mb-2">Processing…</p>
+                  <ul className="space-y-1 text-[var(--color-text-muted)]">
+                    <li className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-terra-500" />
+                      Extracting Sentinel-2 imagery
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-terra-500" />
+                      Calculating NDVI, EVI indices
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-terra-500" />
+                      Running GEDI biomass model
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-terra-500" />
+                      Estimating carbon stock
+                    </li>
                   </ul>
                 </div>
               )}
 
+              {/* Scan results */}
               {scanResult && (
                 <div className="space-y-4">
-                  <div className="bg-white border rounded-lg p-4">
-                    <h4 className="font-semibold mb-3">Scan Results</h4>
+                  {/* Carbon summary */}
+                  <div className="bg-[var(--color-surface-muted)] rounded-xl p-4">
+                    <p className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-3">Scan results</p>
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <div className="text-3xl font-bold text-terra-600">
+                        <div className="text-3xl font-bold text-terra-700">
                           {scanResult.estimated_tco2e.toFixed(1)}
                         </div>
-                        <div className="text-sm text-gray-500">tCO2e</div>
+                        <div className="text-xs text-[var(--color-text-muted)] mt-0.5">tCO₂e carbon stock</div>
                       </div>
                       <IntegrityBadge score={scanResult.integrity_score} />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div className="bg-gray-50 rounded p-2">
-                        <div className="text-gray-500">NDVI</div>
-                        <div className="font-semibold">
-                          {scanResult.mean_ndvi.toFixed(3)}
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      {[
+                        { label: "NDVI",           value: scanResult.mean_ndvi.toFixed(3) },
+                        { label: "EVI",            value: scanResult.mean_evi.toFixed(3) },
+                        { label: "Biomass",        value: `${scanResult.estimated_biomass.toFixed(1)} t/ha` },
+                        { label: "Carbon density", value: `${scanResult.carbon_density.toFixed(2)} tCO₂e/ha` },
+                      ].map(({ label, value }) => (
+                        <div key={label} className="bg-[var(--color-surface)] rounded-lg p-2.5">
+                          <div className="text-xs text-[var(--color-text-muted)]">{label}</div>
+                          <div className="font-semibold text-[var(--color-text-primary)] mt-0.5">{value}</div>
                         </div>
-                      </div>
-                      <div className="bg-gray-50 rounded p-2">
-                        <div className="text-gray-500">EVI</div>
-                        <div className="font-semibold">
-                          {scanResult.mean_evi.toFixed(3)}
-                        </div>
-                      </div>
-                      <div className="bg-gray-50 rounded p-2">
-                        <div className="text-gray-500">Biomass</div>
-                        <div className="font-semibold">
-                          {scanResult.estimated_biomass.toFixed(1)} t/ha
-                        </div>
-                      </div>
-                      <div className="bg-gray-50 rounded p-2">
-                        <div className="text-gray-500">Carbon Density</div>
-                        <div className="font-semibold">
-                          {scanResult.carbon_density.toFixed(2)} tCO2e/ha
-                        </div>
-                      </div>
+                      ))}
                     </div>
                   </div>
 
-                  <div className="bg-white border rounded-lg p-4">
-                    <h4 className="font-semibold mb-3">Valuation</h4>
-                    <div className="text-center mb-3">
-                      <div className="text-2xl font-bold text-terra-600">
-                        ${scanResult.buy_price_per_tonne.toFixed(2)}
+                  {/* Valuation */}
+                  <div className="bg-[var(--color-surface-muted)] rounded-xl p-4">
+                    <p className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-3">Valuation</p>
+                    <div className="flex items-end justify-between mb-3">
+                      <div>
+                        <div className="text-2xl font-bold text-terra-700">
+                          ${scanResult.buy_price_per_tonne.toFixed(2)}
+                        </div>
+                        <div className="text-xs text-[var(--color-text-muted)]">per tonne</div>
                       </div>
-                      <div className="text-sm text-gray-500">per tonne</div>
+                      <div className="text-right">
+                        <div className="text-lg font-bold text-[var(--color-text-primary)]">
+                          ${totalValue}
+                        </div>
+                        <div className="text-xs text-[var(--color-text-muted)]">total value</div>
+                      </div>
                     </div>
-                    <div className="text-center text-lg font-semibold text-gray-800 mb-2">
-                      Total Value: $
-                      {(
-                        scanResult.buy_price_per_tonne *
-                        scanResult.estimated_tco2e
-                      ).toFixed(2)}
-                    </div>
-                    <RiskGauge
-                      score={scanResult.risk_adjustment}
-                      label="Permanence Risk"
-                    />
+                    <RiskGauge score={scanResult.risk_adjustment} label="Permanence Risk" />
                   </div>
 
-                  {/* Admin Info - No contract acceptance here */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-blue-900 mb-2">
-                      Next Steps
-                    </h4>
-                    <div className="text-sm text-blue-800 space-y-2">
-                      <p>✅ Scan complete and saved</p>
-                      <p>📧 Notification sent to landowner</p>
-                      <p>⏳ Awaiting landowner approval</p>
-                      {ownerInfo && (
-                        <p className="mt-3 pt-3 border-t border-blue-300">
-                          <strong>Landowner:</strong> {ownerInfo.name}
-                          <br />
-                          They will review via their dashboard.
-                        </p>
-                      )}
+                  {/* Next steps */}
+                  <div className="bg-[var(--color-surface-muted)] border border-[var(--color-border)] rounded-xl p-4">
+                    <p className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-3">Next steps</p>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center gap-2 text-emerald-600">
+                        <span>✓</span> Scan saved to database
+                      </div>
+                      <div className={`flex items-center gap-2 ${resolvedOwnerId !== "demo-user" ? "text-emerald-600" : "text-amber-600"}`}>
+                        <span>{resolvedOwnerId !== "demo-user" ? "✓" : "⚠"}</span>
+                        {resolvedOwnerId !== "demo-user"
+                          ? "In-app notification sent to landowner"
+                          : "Notification sent to demo account (owner ID unresolved)"}
+                      </div>
+                      <div className="flex items-center gap-2 text-[var(--color-text-muted)]">
+                        <span>⏳</span> Awaiting landowner approval
+                      </div>
                     </div>
+                    {ownerInfo && resolvedOwnerId !== "demo-user" && (
+                      <div className="mt-3 pt-3 border-t border-[var(--color-border)] text-xs text-[var(--color-text-muted)]">
+                        <strong className="text-[var(--color-text-secondary)]">{ownerInfo.name}</strong> will review
+                        results under <em>Pending scans</em> in their dashboard.
+                      </div>
+                    )}
                   </div>
+
+                  {/* Re-scan button */}
+                  <button
+                    onClick={() => { setScanResult(null); }}
+                    className="w-full py-2.5 rounded-xl border border-[var(--color-border)] text-[var(--color-text-secondary)] text-sm font-medium hover:bg-[var(--color-surface-muted)] transition-colors"
+                  >
+                    Draw new polygon
+                  </button>
                 </div>
               )}
             </div>
           ) : (
+            /* Empty state */
             <div className="text-center py-12">
-              <div className="text-4xl mb-3">✏️</div>
-              <p className="text-gray-500 mb-4">
-                Draw a polygon on the map to begin
-              </p>
-              <div className="text-xs text-gray-400 space-y-1">
-                <p>1. Click on the map to start drawing</p>
-                <p>2. Click to place points around your plot</p>
-                <p>3. Double-click to complete the polygon</p>
+              <div className="w-14 h-14 bg-[var(--color-surface-muted)] rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <svg className="w-7 h-7 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                    d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                </svg>
               </div>
+              <p className="font-semibold text-[var(--color-text-primary)] mb-1">Draw a plot boundary</p>
+              <p className="text-sm text-[var(--color-text-muted)] mb-5">
+                Use the polygon tool on the map to select the land area you want to scan.
+              </p>
+              <ol className="text-xs text-[var(--color-text-muted)] space-y-1.5 text-left bg-[var(--color-surface-muted)] rounded-xl p-4">
+                <li className="flex items-start gap-2">
+                  <span className="w-4 h-4 rounded-full bg-terra-700 text-white text-[10px] flex items-center justify-center flex-shrink-0 mt-0.5">1</span>
+                  Click the polygon icon in the map toolbar
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="w-4 h-4 rounded-full bg-terra-700 text-white text-[10px] flex items-center justify-center flex-shrink-0 mt-0.5">2</span>
+                  Click to place boundary points around the plot
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="w-4 h-4 rounded-full bg-terra-700 text-white text-[10px] flex items-center justify-center flex-shrink-0 mt-0.5">3</span>
+                  Double-click to complete the polygon
+                </li>
+              </ol>
             </div>
           )}
         </div>

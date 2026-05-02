@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
@@ -34,7 +35,7 @@ export default function Navbar() {
     ];
 
     if (user.role === "landowner")
-      return [...base, { href: "/landowner", label: "Dashboard" }, { href: "/request-registration", label: "Register site" }];
+      return [...base, { href: "/landowner", label: "Dashboard" }, { href: "/landowner/pending-scans", label: "Pending scans" }, { href: "/request-registration", label: "Register site" }];
     if (user.role === "business")
       return [...base, { href: "/dashboard", label: "Dashboard" }];
     if (user.role === "admin")
@@ -47,17 +48,15 @@ export default function Navbar() {
 
   const navBg = isHome
     ? scrolled
-      ? "bg-terra-900/90 backdrop-blur-md shadow-lg"
+      ? "bg-[#0e0f14]/90 backdrop-blur-md shadow-lg border-b border-[var(--color-border)]"
       : "bg-transparent"
     : "bg-[var(--color-surface)] border-b border-[var(--color-border)]";
 
-  const linkBase = isHome
-    ? "text-white/80 hover:text-white hover:bg-white/10"
-    : "text-secondary hover:text-primary hover:bg-terra-50";
+  const linkBase = "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)]";
 
   const linkActive = isHome
-    ? "bg-white/15 text-white"
-    : "bg-terra-100 text-terra-700 font-semibold";
+    ? "bg-white/15 text-white font-semibold"
+    : "bg-[var(--color-surface-muted)] text-[var(--color-text-primary)] font-semibold";
 
   const handleLogout = () => {
     setShowUserMenu(false);
@@ -79,14 +78,16 @@ export default function Navbar() {
           <div className="flex justify-between h-16 items-center">
 
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2.5 group">
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                isHome ? "bg-white/15 border border-white/20 group-hover:bg-white/25" : "bg-terra-700 group-hover:bg-terra-800"
-              }`}>
-                <span className="text-white font-bold text-sm tracking-tight">TF</span>
-              </div>
+            <Link href="/" className="flex items-center gap-2 group">
+              <Image
+                src="/logo.png"
+                alt="TerraFoma"
+                width={100}
+                height={100}
+                className="object-contain transition-opacity group-hover:opacity-80"
+              />
               <span className={`text-lg font-bold tracking-tight transition-colors ${
-                isHome ? "text-white drop-shadow" : "text-terra-800"
+                isHome ? "text-white drop-shadow" : "text-[var(--color-text-primary)]"
               }`}>
                 TerraFoma
               </span>
@@ -117,12 +118,10 @@ export default function Navbar() {
                       className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
                         isHome
                           ? "text-white/90 hover:bg-white/10 border border-white/20"
-                          : "text-secondary hover:bg-terra-50 border border-[var(--color-border)]"
+                          : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] border border-[var(--color-border)]"
                       }`}
                     >
-                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
-                        isHome ? "bg-white/20 text-white" : "bg-terra-700 text-white"
-                      }`}>
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-terra-700 text-white">
                         {user.full_name.charAt(0).toUpperCase()}
                       </div>
                       <span className="hidden sm:block">{user.full_name.split(" ")[0]}</span>
@@ -135,11 +134,11 @@ export default function Navbar() {
                     </button>
 
                     {showUserMenu && (
-                      <div className="absolute right-0 mt-2 w-60 rounded-2xl shadow-xl bg-[var(--color-surface)] ring-1 ring-[var(--color-border)] overflow-hidden animate-scale-in">
-                        <div className="px-4 py-3 bg-terra-50 border-b border-[var(--color-border)]">
-                          <p className="text-sm font-semibold text-primary">{user.full_name}</p>
-                          <p className="text-xs text-muted mt-0.5">{user.email}</p>
-                          <span className="inline-block mt-2 px-2.5 py-0.5 text-xs font-medium rounded-full bg-terra-100 text-terra-700 border border-terra-200">
+                      <div className="absolute right-0 mt-2 w-60 rounded-2xl shadow-2xl bg-[var(--color-surface)] ring-1 ring-[var(--color-border)] overflow-hidden animate-scale-in">
+                        <div className="px-4 py-3 bg-[var(--color-surface-muted)] border-b border-[var(--color-border)]">
+                          <p className="text-sm font-semibold text-[var(--color-text-primary)]">{user.full_name}</p>
+                          <p className="text-xs text-[var(--color-text-muted)] mt-0.5">{user.email}</p>
+                          <span className="inline-block mt-2 px-2.5 py-0.5 text-xs font-semibold rounded-full bg-terra-700 text-white">
                             {user.role === "landowner"
                               ? "Project operator"
                               : user.role === "admin"
@@ -150,10 +149,7 @@ export default function Navbar() {
                         <div className="p-2">
                           <button
                             onClick={handleLogout}
-                            className="w-full text-left px-3 py-2 text-sm font-medium rounded-lg transition-colors"
-                            style={{ color: "var(--color-risk-high)" }}
-                            onMouseEnter={(e) => (e.currentTarget.style.background = "#fef2f2")}
-                            onMouseLeave={(e) => (e.currentTarget.style.background = "")}
+                            className="w-full text-left px-3 py-2 text-sm font-medium rounded-lg text-red-400 transition-colors hover:bg-[#1c0c0c]"
                           >
                             Sign out
                           </button>
@@ -166,18 +162,16 @@ export default function Navbar() {
                     <Link
                       href="/login"
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                        isHome ? "text-white/90 hover:bg-white/10" : "text-secondary hover:bg-terra-50"
+                        isHome
+                          ? "text-white/90 hover:bg-white/10"
+                          : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)]"
                       }`}
                     >
                       Sign in
                     </Link>
                     <Link
                       href="/signup"
-                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm ${
-                        isHome
-                          ? "bg-white text-terra-800 hover:bg-terra-50"
-                          : "bg-terra-700 text-white hover:bg-terra-800"
-                      }`}
+                      className="px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm bg-terra-700 text-white hover:bg-terra-800"
                     >
                       Get access
                     </Link>

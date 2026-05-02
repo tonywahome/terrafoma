@@ -2,25 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Design tokens ───────────────────────────────────────── */
+/* ── Design tokens (dark slate theme) ────────────────────── */
 :root {
   /* Surfaces */
-  --color-surface:        #ffffff;
-  --color-surface-subtle: #f6faf6;
-  --color-surface-muted:  #e8f0e9;
+  --color-surface:        #16181f;   /* card / panel background   */
+  --color-surface-subtle: #0e0f14;   /* page background           */
+  --color-surface-muted:  #1e2028;   /* inputs, table headers     */
 
   /* Borders */
-  --color-border:         #d1e0d3;
+  --color-border:         #272b3e;
 
   /* Text */
-  --color-text-primary:   #0f1f12;
-  --color-text-secondary: #3d5c42;
-  --color-text-muted:     #6b8c72;
+  --color-text-primary:   #e8eaf2;
+  --color-text-secondary: #8d94b4;
+  --color-text-muted:     #52587a;
 
   /* Risk */
-  --color-risk-low:       #15803d;
-  --color-risk-medium:    #c9820a;
-  --color-risk-high:      #b42318;
+  --color-risk-low:       #4ade80;
+  --color-risk-medium:    #fbbf24;
+  --color-risk-high:      #f87171;
 }
 
 /* ── Base ────────────────────────────────────────────────── */
@@ -35,6 +35,98 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* ── Placeholder text ────────────────────────────────────── */
+::placeholder {
+  color: var(--color-text-muted);
+  opacity: 1;
+}
+
+/* ─────────────────────────────────────────────────────────
+   Dark theme overrides — unlayered rules beat @layer utilities
+   ───────────────────────────────────────────────────────── */
+
+/* Gray text → light on dark backgrounds */
+.text-gray-900 { color: var(--color-text-primary)   !important; }
+.text-gray-800 { color: var(--color-text-primary)   !important; }
+.text-gray-700 { color: var(--color-text-secondary) !important; }
+.text-gray-600 { color: var(--color-text-secondary) !important; }
+.text-gray-500 { color: var(--color-text-muted)     !important; }
+.text-gray-400 { color: var(--color-text-muted)     !important; }
+
+/* Green text → brighter on dark */
+.text-green-600 { color: #4ade80 !important; }
+.text-green-500 { color: #22c55e !important; }
+
+/* White / neutral backgrounds → dark surfaces */
+.bg-white      { background-color: var(--color-surface) !important; }
+.bg-gray-50    { background-color: var(--color-surface-subtle) !important; }
+.bg-gray-100   { background-color: var(--color-surface-muted) !important; }
+.bg-gray-200   { background-color: #252940 !important; }
+.border-gray-200 { border-color: var(--color-border) !important; }
+.border-gray-300 { border-color: var(--color-border) !important; }
+.divide-gray-200 > * + * { border-color: var(--color-border) !important; }
+
+/* Terra light backgrounds → very dark tinted green */
+.bg-terra-50              { background-color: #0c1910 !important; }
+.bg-terra-100             { background-color: #101f14 !important; }
+.hover\:bg-terra-50:hover { background-color: #0c1910 !important; }
+
+/* Terra text → bright, readable on dark backgrounds */
+.text-terra-700               { color: #4ade80 !important; }
+.text-terra-800               { color: #22c55e !important; }
+.text-terra-600               { color: #4ade80 !important; }
+.text-terra-500               { color: #22c55e !important; }
+.hover\:text-terra-700:hover  { color: #22c55e !important; }
+.hover\:text-terra-800:hover  { color: #16a34a !important; }
+
+/* Terra borders → dark */
+.border-terra-200 { border-color: #1a3d22 !important; }
+
+/* ── Status: Red ────────────────────────────────────────── */
+.bg-red-50      { background-color: #1c0c0c !important; }
+.bg-red-100     { background-color: #231010 !important; }
+.border-red-200 { border-color: #7f2020 !important; }
+.border-red-300 { border-color: #991b1b !important; }
+.text-red-700   { color: #f87171 !important; }
+.text-red-800   { color: #ef4444 !important; }
+.text-red-600   { color: #fca5a5 !important; }
+.text-red-500   { color: #f87171 !important; }
+.hover\:bg-red-50:hover  { background-color: #231010 !important; }
+.hover\:bg-red-100:hover { background-color: #2c1212 !important; }
+.bg-red-600     { background-color: #dc2626 !important; }
+.hover\:bg-red-700:hover { background-color: #b91c1c !important; }
+
+/* ── Status: Amber ──────────────────────────────────────── */
+.bg-amber-50       { background-color: #1c1206 !important; }
+.bg-amber-100      { background-color: #231608 !important; }
+.border-amber-200  { border-color: #78350a !important; }
+.border-amber-300  { border-color: #92400e !important; }
+.text-amber-700    { color: #fbbf24 !important; }
+.text-amber-800    { color: #f59e0b !important; }
+.text-amber-600    { color: #fcd34d !important; }
+.text-amber-900    { color: #fef3c7 !important; }
+.hover\:bg-amber-50:hover  { background-color: #231608 !important; }
+.hover\:bg-amber-100:hover { background-color: #2d1c0a !important; }
+
+/* ── Status: Emerald ────────────────────────────────────── */
+.bg-emerald-50        { background-color: #091a0e !important; }
+.bg-emerald-100       { background-color: #0d2112 !important; }
+.border-emerald-200   { border-color: #065f46 !important; }
+.border-emerald-300   { border-color: #047857 !important; }
+.text-emerald-700     { color: #34d399 !important; }
+.text-emerald-800     { color: #10b981 !important; }
+.text-emerald-600     { color: #6ee7b7 !important; }
+.bg-emerald-600       { background-color: #059669 !important; }
+.hover\:bg-emerald-50:hover  { background-color: #0d2112 !important; }
+
+/* ── Status: Blue ───────────────────────────────────────── */
+.bg-blue-50      { background-color: #0a1220 !important; }
+.bg-blue-100     { background-color: #0d1829 !important; }
+.border-blue-200 { border-color: #1e3a5f !important; }
+.text-blue-600   { color: #60a5fa !important; }
+.text-blue-700   { color: #93c5fd !important; }
+.text-blue-900   { color: #bfdbfe !important; }
 
 /* ── Animations ──────────────────────────────────────────── */
 @keyframes fadeUp {
@@ -57,32 +149,13 @@ body {
   to   { opacity: 1; transform: scale(1); }
 }
 
-@keyframes shimmer {
-  0%   { background-position: -200% 0; }
-  100% { background-position:  200% 0; }
-}
-
-.animate-fade-up {
-  animation: fadeUp 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-.animate-fade-up-delay-1 {
-  animation: fadeUp 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
-}
-.animate-fade-up-delay-2 {
-  animation: fadeUp 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.4s both;
-}
-.animate-fade-up-delay-3 {
-  animation: fadeUp 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.6s both;
-}
-.animate-fade-in {
-  animation: fadeIn 1.2s ease both;
-}
-.animate-slide-in-right {
-  animation: slideInRight 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-.animate-scale-in {
-  animation: scaleIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
+.animate-fade-up          { animation: fadeUp 0.85s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-fade-up-delay-1  { animation: fadeUp 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both; }
+.animate-fade-up-delay-2  { animation: fadeUp 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.4s both; }
+.animate-fade-up-delay-3  { animation: fadeUp 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.6s both; }
+.animate-fade-in          { animation: fadeIn 1.2s ease both; }
+.animate-slide-in-right   { animation: slideInRight 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-scale-in         { animation: scaleIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
 /* ── Map ─────────────────────────────────────────────────── */
 .mapboxgl-map {
@@ -90,8 +163,8 @@ body {
   height: 100%;
 }
 
-/* ── Scrollbar (subtle) ──────────────────────────────────── */
+/* ── Scrollbar ───────────────────────────────────────────── */
 ::-webkit-scrollbar          { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track    { background: transparent; }
 ::-webkit-scrollbar-thumb    { background: var(--color-border); border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: #a8c4ab; }
+::-webkit-scrollbar-thumb:hover { background: #404670; }
