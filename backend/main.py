@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from config import settings
-from routers import scan, plots, credits, transactions, dashboard, certificates, auth, registration, notifications, landowner
+from routers import scan, plots, credits, transactions, dashboard, certificates, auth, registration, notifications, landowner, monitoring
 
 app = FastAPI(
     title="TerraFoma API",
@@ -32,6 +32,7 @@ app.include_router(credits.router)
 app.include_router(transactions.router)
 app.include_router(dashboard.router)
 app.include_router(certificates.router)
+app.include_router(monitoring.router)
 
 
 @app.get("/")

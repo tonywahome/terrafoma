@@ -46,8 +46,12 @@ function PlotCard({
     try {
       await onDelete(plot.id);
     } catch (err: any) {
-      setDeleteError(err.message || "Failed to delete plot");
-      setConfirming(false);
+      const msg = err.message || "";
+      setDeleteError(
+        msg.includes("listed or sold")
+          ? "This plot has listed or sold credits and cannot be deleted. Retire the credits first."
+          : msg || "Failed to delete plot"
+      );
     } finally {
       setDeleting(false);
     }
@@ -210,6 +214,7 @@ export default function LandownerDashboard() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [plots, setPlots] = useState<PlotWithMonitoring[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [pendingCredits, setPendingCredits] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -222,14 +227,19 @@ export default function LandownerDashboard() {
   const loadData = async () => {
     if (!user?.id) return;
     try {
-      const [plotsData, notifRes] = await Promise.allSettled([
+      const [plotsData, notifRes, pendingRes] = await Promise.allSettled([
         api.getPlotsByOwner(user.id),
         fetch(`/api/notifications?user_id=${user.id}`),
+        api.getPendingScans(user.id),
       ]);
       if (plotsData.status === "fulfilled") setPlots(plotsData.value as PlotWithMonitoring[]);
       if (notifRes.status === "fulfilled" && (notifRes.value as Response).ok) {
         const d = await (notifRes.value as Response).json();
         setNotifications(d.notifications || []);
+      }
+      if (pendingRes.status === "fulfilled") {
+        const d = pendingRes.value as any;
+        setPendingCredits((d.pending_scans || []).length);
       }
     } catch (e) {
       console.error(e);
@@ -257,8 +267,6 @@ export default function LandownerDashboard() {
 
   const critical = plots.filter(p => p.latest_monitoring?.alert_level === "critical").length;
   const warnings  = plots.filter(p => p.latest_monitoring?.alert_level === "warning").length;
-  const unread    = notifications.filter(n => !n.read).length;
-  const pendingCredits = notifications.filter(n => n.type === "scan_complete" && !n.read).length;
 
   return (
     <div className="min-h-screen bg-[var(--color-surface-subtle)]">

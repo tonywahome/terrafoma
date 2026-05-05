@@ -158,14 +158,14 @@ export default function Home() {
       </section>
 
       {/* ── Trust strip ──────────────────────────────────────── */}
-      <section className="py-14 bg-terra-900">
+      <section className="py-14 bg-[var(--color-surface-muted)] border-t border-[var(--color-border)]">
         <div className="max-w-6xl mx-auto px-4 text-center">
-          <p className="text-xs uppercase tracking-[0.3em] text-terra-400 font-semibold mb-6">
+          <p className="text-xs uppercase tracking-[0.3em] text-terra-700 font-semibold mb-6">
             Built on open science
           </p>
           <div className="flex flex-wrap justify-center gap-x-10 gap-y-3">
             {["Sentinel-2 · ESA", "GEDI · NASA", "GHG Protocol", "Verra VCS", "Rwanda NDC 2030"].map((item) => (
-              <span key={item} className="text-sm text-terra-300 font-medium">{item}</span>
+              <span key={item} className="text-sm text-slate-600 font-medium">{item}</span>
             ))}
           </div>
         </div>

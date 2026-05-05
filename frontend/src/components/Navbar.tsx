@@ -48,14 +48,16 @@ export default function Navbar() {
 
   const navBg = isHome
     ? scrolled
-      ? "bg-[#0e0f14]/90 backdrop-blur-md shadow-lg border-b border-[var(--color-border)]"
+      ? "bg-white/90 backdrop-blur-md shadow-sm border-b border-[var(--color-border)]"
       : "bg-transparent"
-    : "bg-[var(--color-surface)] border-b border-[var(--color-border)]";
+    : "bg-white border-b border-[var(--color-border)] shadow-sm";
 
   const linkBase = "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)]";
 
   const linkActive = isHome
-    ? "bg-white/15 text-white font-semibold"
+    ? scrolled
+      ? "bg-[var(--color-surface-muted)] text-[var(--color-text-primary)] font-semibold"
+      : "bg-white/15 text-white font-semibold"
     : "bg-[var(--color-surface-muted)] text-[var(--color-text-primary)] font-semibold";
 
   const handleLogout = () => {
@@ -149,7 +151,7 @@ export default function Navbar() {
                         <div className="p-2">
                           <button
                             onClick={handleLogout}
-                            className="w-full text-left px-3 py-2 text-sm font-medium rounded-lg text-red-400 transition-colors hover:bg-[#1c0c0c]"
+                            className="w-full text-left px-3 py-2 text-sm font-medium rounded-lg text-red-600 transition-colors hover:bg-red-50"
                           >
                             Sign out
                           </button>

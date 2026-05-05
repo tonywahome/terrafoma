@@ -37,8 +37,8 @@ class ApprovalRequest(BaseModel):
 async def get_pending_scans(user_id: str):
     """Get all pending scan results awaiting landowner approval."""
     try:
-        db = get_supabase_client()
-        
+        db = get_admin_client()
+
         # Get pending credits for this landowner
         credits_result = db.table("carbon_credits")\
             .select("*, scan_results(*), land_plots(name)")\
@@ -122,9 +122,22 @@ async def approve_or_reject_listing(data: ApprovalRequest, background_tasks: Bac
             .update(update_data)\
             .eq("id", data.credit_id)\
             .execute()
-        
+
         logger.info(f"Credit {data.credit_id} {new_status} by landowner")
-        
+
+        # Mark the originating scan_complete notification as read so the
+        # dashboard pending-review counter clears immediately.
+        try:
+            admin_db = get_admin_client()
+            admin_db.table("notifications")\
+                .update({"read": True})\
+                .eq("user_id", credit.get("owner_id"))\
+                .eq("type", "scan_complete")\
+                .filter("data->>credit_id", "eq", data.credit_id)\
+                .execute()
+        except Exception as mark_err:
+            logger.warning(f"Could not mark scan_complete notification read: {mark_err}")
+
         # Create confirmation notification
         # Use the owner_id directly from the credit, not from land_plots
         owner_id = credit.get("owner_id")

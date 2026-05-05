@@ -100,19 +100,23 @@ async def mark_notification_read(notification_id: str):
         raise HTTPException(status_code=500, detail="Failed to update notification")
 
 
+class MarkAllReadRequest(BaseModel):
+    user_id: str
+
+
 @router.post("/mark-all-read")
-async def mark_all_read(user_id: str):
+async def mark_all_read(request: MarkAllReadRequest):
     """Mark all notifications as read for a user."""
     try:
-        db = get_supabase_client()
+        db = get_admin_client()
         db.table("notifications")\
             .update({"read": True})\
-            .eq("user_id", user_id)\
+            .eq("user_id", request.user_id)\
             .eq("read", False)\
             .execute()
-        
+
         return {"message": "All notifications marked as read"}
-    
+
     except Exception as e:
         logger.error(f"Error marking all read: {e}")
         raise HTTPException(status_code=500, detail="Failed to update notifications")

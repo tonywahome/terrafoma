@@ -42,3 +42,6 @@ backend/ml/data/*.csv
 
 # Jupyter
 .ipynb_checkpoints/
+backend/ml/add_baseline_column.sql
+backend/ml/gee_export_rwanda.js
+backend/create_monitoring_table.sql
