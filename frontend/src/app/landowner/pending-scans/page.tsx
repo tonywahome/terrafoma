@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -23,6 +23,13 @@ interface PendingScan {
   carbon_density: number;
   status: string;
 }
+
+const STATUS_STYLES: Record<string, { bg: string; border: string; text: string; dot: string; label: string }> = {
+  pending_approval: { bg: "bg-amber-50",   border: "border-amber-200",   text: "text-amber-800",   dot: "bg-amber-500 animate-pulse", label: "Awaiting approval" },
+  listed:           { bg: "bg-emerald-50", border: "border-emerald-200", text: "text-emerald-800", dot: "bg-emerald-500",             label: "Listed on registry" },
+  rejected:         { bg: "bg-red-50",     border: "border-red-200",     text: "text-red-800",     dot: "bg-red-500",                 label: "Rejected" },
+  sold:             { bg: "bg-terra-50",   border: "border-terra-200",   text: "text-terra-800",   dot: "bg-terra-500",               label: "Sold" },
+};
 
 function IntegrityRing({ score }: { score: number }) {
   const pct = Math.round(score);
@@ -66,11 +73,13 @@ function Metric({ label, value }: { label: string; value: string }) {
 
 function ScanCard({
   scan,
+  plotMode,
   onApprove,
   onReject,
   processing,
 }: {
   scan: PendingScan;
+  plotMode: boolean;
   onApprove: (id: string) => void;
   onReject: (scan: PendingScan) => void;
   processing: boolean;
@@ -79,24 +88,26 @@ function ScanCard({
     day: "numeric", month: "short", year: "numeric",
   });
 
+  const st = STATUS_STYLES[scan.status] ?? STATUS_STYLES.pending_approval;
+  const isPending = scan.status === "pending_approval";
+
   return (
-    <div className="bg-white rounded-2xl border-2 border-amber-200 shadow-sm overflow-hidden">
+    <div className={`bg-white rounded-2xl border-2 ${st.border} shadow-sm overflow-hidden`}>
       {/* Top bar */}
-      <div className="bg-amber-50 border-b border-amber-200 px-5 py-3 flex items-center justify-between">
+      <div className={`${st.bg} border-b ${st.border} px-5 py-3 flex items-center justify-between`}>
         <div>
-          <h2 className="font-bold text-primary">{scan.plot_name}</h2>
-          <p className="text-xs text-muted mt-0.5">Satellite scan · {date}</p>
+          {!plotMode && <h2 className="font-bold text-primary">{scan.plot_name}</h2>}
+          <p className={`text-xs text-muted ${!plotMode ? "mt-0.5" : ""}`}>Satellite scan · {date}</p>
         </div>
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-          Awaiting your approval
+        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${st.bg} ${st.text} border ${st.border}`}>
+          <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
+          {st.label}
         </span>
       </div>
 
       <div className="p-5">
         {/* Key numbers row */}
         <div className="flex items-center justify-between gap-4 mb-5">
-          {/* tCO2e */}
           <div>
             <div className="text-4xl font-bold text-terra-700 leading-none">
               {scan.quantity_tco2e.toFixed(1)}
@@ -104,10 +115,8 @@ function ScanCard({
             <div className="text-sm text-muted mt-0.5">tCO₂e carbon stock</div>
           </div>
 
-          {/* Integrity ring */}
           <IntegrityRing score={scan.integrity_score} />
 
-          {/* Valuation */}
           <div className="text-right">
             <div className="text-3xl font-bold text-primary leading-none">
               ${scan.total_value.toFixed(2)}
@@ -146,32 +155,43 @@ function ScanCard({
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex gap-3">
-          <button
-            onClick={() => onApprove(scan.credit_id)}
-            disabled={processing}
-            className="flex-1 py-2.5 rounded-xl bg-terra-700 text-white text-sm font-semibold hover:bg-terra-800 disabled:opacity-50 transition-colors"
-          >
-            Accept & list on registry
-          </button>
-          <button
-            onClick={() => onReject(scan)}
-            disabled={processing}
-            className="flex-1 py-2.5 rounded-xl border-2 border-red-200 text-red-600 text-sm font-semibold hover:bg-red-50 disabled:opacity-50 transition-colors"
-          >
-            Reject listing
-          </button>
-        </div>
+        {/* Actions — only for pending credits */}
+        {isPending ? (
+          <div className="flex gap-3">
+            <button
+              onClick={() => onApprove(scan.credit_id)}
+              disabled={processing}
+              className="flex-1 py-2.5 rounded-xl bg-terra-700 text-white text-sm font-semibold hover:bg-terra-800 disabled:opacity-50 transition-colors"
+            >
+              Accept & list on registry
+            </button>
+            <button
+              onClick={() => onReject(scan)}
+              disabled={processing}
+              className="flex-1 py-2.5 rounded-xl border-2 border-red-200 text-red-600 text-sm font-semibold hover:bg-red-50 disabled:opacity-50 transition-colors"
+            >
+              Reject listing
+            </button>
+          </div>
+        ) : (
+          <div className={`rounded-xl px-4 py-2.5 text-sm font-medium text-center ${st.bg} ${st.text} border ${st.border}`}>
+            {scan.status === "listed"   && "This credit is listed on the carbon registry"}
+            {scan.status === "sold"     && "This credit has been sold"}
+            {scan.status === "rejected" && "This listing was rejected"}
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-export default function PendingScansPage() {
+function PendingScansContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const plotId = searchParams.get("plot_id");
+
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const [pendingScans, setPendingScans] = useState<PendingScan[]>([]);
+  const [scans, setScans] = useState<PendingScan[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [toast, setToast] = useState<{ type: "success" | "error"; msg: string } | null>(null);
@@ -183,15 +203,20 @@ export default function PendingScansPage() {
       if (!isAuthenticated || !user) { router.push("/login"); return; }
       load();
     }
-  }, [authLoading, isAuthenticated, user]);
+  }, [authLoading, isAuthenticated, user, plotId]);
 
   const load = async () => {
     if (!user?.id) return;
     try {
-      const res = await api.getPendingScans(user.id) as { pending_scans: PendingScan[] };
-      setPendingScans(res.pending_scans || []);
+      let res: { pending_scans: PendingScan[] };
+      if (plotId) {
+        res = await api.getPlotScans(plotId, user.id) as { pending_scans: PendingScan[] };
+      } else {
+        res = await api.getPendingScans(user.id) as { pending_scans: PendingScan[] };
+      }
+      setScans(res.pending_scans || []);
     } catch {
-      showToast("error", "Failed to load pending scans");
+      showToast("error", "Failed to load scan results");
     } finally {
       setLoading(false);
     }
@@ -206,7 +231,9 @@ export default function PendingScansPage() {
     setProcessing(true);
     try {
       await api.approveListing(creditId, true);
-      setPendingScans(prev => prev.filter(s => s.credit_id !== creditId));
+      setScans(prev => prev.map(s =>
+        s.credit_id === creditId ? { ...s, status: "listed" } : s
+      ));
       showToast("success", "Carbon credit listed on the registry.");
     } catch (e: any) {
       showToast("error", e.message || "Failed to approve listing");
@@ -220,7 +247,9 @@ export default function PendingScansPage() {
     setProcessing(true);
     try {
       await api.approveListing(rejectTarget.credit_id, false, rejectionReason);
-      setPendingScans(prev => prev.filter(s => s.credit_id !== rejectTarget.credit_id));
+      setScans(prev => prev.map(s =>
+        s.credit_id === rejectTarget.credit_id ? { ...s, status: "rejected" } : s
+      ));
       setRejectTarget(null);
       setRejectionReason("");
       showToast("success", "Listing rejected.");
@@ -242,6 +271,9 @@ export default function PendingScansPage() {
     );
   }
 
+  const plotName = scans[0]?.plot_name;
+  const pendingCount = scans.filter(s => s.status === "pending_approval").length;
+
   return (
     <div className="min-h-screen bg-[var(--color-surface-subtle)]">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
@@ -249,31 +281,47 @@ export default function PendingScansPage() {
         {/* Toast */}
         {toast && (
           <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl shadow-lg text-sm font-semibold flex items-center gap-2 ${
-            toast.type === "success"
-              ? "bg-emerald-600 text-white"
-              : "bg-red-600 text-white"
+            toast.type === "success" ? "bg-emerald-600 text-white" : "bg-red-600 text-white"
           }`}>
             {toast.type === "success" ? "✓" : "✕"} {toast.msg}
           </div>
         )}
 
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-2">
-          <Link href="/landowner" className="text-muted hover:text-primary transition-colors text-sm">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 mb-2 text-sm">
+          <Link href="/landowner" className="text-muted hover:text-primary transition-colors">
             ← Dashboard
           </Link>
+          {plotId && plotName && (
+            <>
+              <span className="text-muted">/</span>
+              <Link
+                href={`/landowner/monitoring/${plotId}`}
+                className="text-muted hover:text-primary transition-colors"
+              >
+                {plotName}
+              </Link>
+            </>
+          )}
         </div>
-        <h1 className="text-2xl font-bold text-primary mb-1">Satellite scan results</h1>
+
+        <h1 className="text-2xl font-bold text-primary mb-1">
+          {plotId && plotName ? `Credits — ${plotName}` : "Satellite scan results"}
+        </h1>
         <p className="text-muted text-sm mb-8">
-          Review and approve your scan results to list carbon credits on the registry.
+          {plotId
+            ? "All scan results and carbon credit listings for this plot."
+            : "Review and approve your scan results to list carbon credits on the registry."}
         </p>
 
-        {pendingScans.length === 0 ? (
+        {scans.length === 0 ? (
           <div className="bg-white rounded-2xl border border-[var(--color-border)] p-16 text-center shadow-sm">
             <div className="text-5xl mb-4">🛰️</div>
-            <h2 className="text-lg font-bold text-primary mb-2">No pending results</h2>
+            <h2 className="text-lg font-bold text-primary mb-2">No scan results yet</h2>
             <p className="text-muted text-sm mb-6 max-w-xs mx-auto">
-              When an operator scans your registered land you'll see the results here to review.
+              {plotId
+                ? "This plot hasn't been scanned yet. Scans are triggered by the system operator."
+                : "When an operator scans your registered land you'll see the results here to review."}
             </p>
             <Link
               href="/landowner"
@@ -285,12 +333,14 @@ export default function PendingScansPage() {
         ) : (
           <div className="space-y-5">
             <p className="text-sm text-muted">
-              {pendingScans.length} result{pendingScans.length !== 1 ? "s" : ""} awaiting your review
+              {scans.length} scan result{scans.length !== 1 ? "s" : ""}
+              {pendingCount > 0 && ` · ${pendingCount} awaiting your approval`}
             </p>
-            {pendingScans.map(scan => (
+            {scans.map(scan => (
               <ScanCard
                 key={scan.credit_id}
                 scan={scan}
+                plotMode={!!plotId}
                 onApprove={handleApprove}
                 onReject={setRejectTarget}
                 processing={processing}
@@ -335,5 +385,20 @@ export default function PendingScansPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function PendingScansPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-[var(--color-surface-subtle)]">
+        <div className="flex items-center gap-3 text-muted">
+          <div className="w-5 h-5 border-2 border-terra-600 border-t-transparent rounded-full animate-spin" />
+          Loading…
+        </div>
+      </div>
+    }>
+      <PendingScansContent />
+    </Suspense>
   );
 }

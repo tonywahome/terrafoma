@@ -107,10 +107,16 @@ export const api = {
   runMonitoringCheck: (plotId: string) =>
     fetchAPI(`/api/monitoring/plots/${plotId}/run`, { method: "POST" }),
   getMonitoringSummary: () => fetchAPI("/api/monitoring/summary"),
+  getVegetationTiles: (plotId: string, daysBack = 30) =>
+    fetchAPI(`/api/monitoring/plots/${plotId}/vegetation-tiles?days_back=${daysBack}`),
+  getChangeDetection: (plotId: string, currentDays = 30, baselineDays = 180) =>
+    fetchAPI(`/api/monitoring/plots/${plotId}/change-detection?current_days=${currentDays}&baseline_days=${baselineDays}`),
 
   // Landowner - Pending Scans & Approval
   getPendingScans: (userId: string) =>
     fetchAPI(`/api/landowner/pending-scans?user_id=${userId}`),
+  getPlotScans: (plotId: string, userId: string) =>
+    fetchAPI(`/api/landowner/pending-scans?user_id=${userId}&plot_id=${plotId}`),
   approveListing: (creditId: string, approved: boolean, rejectionReason?: string) =>
     fetchAPI("/api/landowner/approve-listing", {
       method: "POST",

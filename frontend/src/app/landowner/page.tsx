@@ -186,7 +186,7 @@ function PlotCard({
                 View monitoring
               </Link>
               <Link
-                href="/landowner/pending-scans"
+                href={`/landowner/pending-scans?plot_id=${plot.id}`}
                 className="px-4 py-2.5 rounded-xl border border-[var(--color-border)] text-secondary text-sm font-medium hover:bg-terra-50 transition-colors"
               >
                 Credits

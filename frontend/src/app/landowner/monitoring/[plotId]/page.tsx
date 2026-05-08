@@ -8,8 +8,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import type { MonitoringReport, PlotWithMonitoring } from "@/lib/types";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-  ReferenceLine, ResponsiveContainer, LineChart, Line, Legend,
+  ReferenceLine, ReferenceArea, ResponsiveContainer, Legend,
 } from "recharts";
+import VegetationMap from "@/components/VegetationMap";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -202,7 +203,7 @@ function ChartTooltip({ active, payload, label }: any) {
 export default function PlotMonitoringPage() {
   const { plotId } = useParams<{ plotId: string }>();
   const router = useRouter();
-  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
 
   const [plot, setPlot]       = useState<PlotWithMonitoring | null>(null);
   const [latest, setLatest]   = useState<MonitoringReport | null>(null);
@@ -284,9 +285,6 @@ export default function PlotMonitoringPage() {
     ? history[0].current_ndvi - history[history.length - 1].current_ndvi
     : null;
 
-  const worstAlert = history.some(r => r.alert_level === "critical") ? "critical"
-    : history.some(r => r.alert_level === "warning")  ? "warning"
-    : "info";
 
   return (
     <div className="min-h-screen bg-[var(--color-surface-subtle)]">
@@ -449,20 +447,41 @@ export default function PlotMonitoringPage() {
             </div>
 
             {/* ── NDVI trend chart ── */}
-            {chartData.length >= 1 && (
-              <div className="bg-white rounded-2xl border border-[var(--color-border)] shadow-sm p-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+            {chartData.length >= 1 && (() => {
+              // Y-axis domain: always include baseline and data range with padding
+              const allNdvi = chartData.map(d => d.current_ndvi);
+              const yMin = Math.max(0, Math.min(...allNdvi, latest.baseline_ndvi) - 0.12);
+              const yMax = Math.min(1, Math.max(...allNdvi, latest.baseline_ndvi) + 0.12);
+              const trendDir = ndviTrend !== null ? (ndviTrend > 0.005 ? "up" : ndviTrend < -0.005 ? "down" : "flat") : null;
+
+              return (
+              <div className="bg-white rounded-2xl border border-[var(--color-border)] shadow-sm overflow-hidden">
+                {/* Chart header */}
+                <div className="px-6 pt-5 pb-4 flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-[var(--color-border)]">
                   <div>
-                    <h2 className="font-bold text-primary">NDVI trend</h2>
-                    <p className="text-sm text-muted">Weekly satellite observations vs historical baseline</p>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <h2 className="font-bold text-primary">NDVI vegetation trend</h2>
+                      {trendDir && (
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
+                          trendDir === "up"   ? "bg-emerald-50 text-emerald-700 border border-emerald-200" :
+                          trendDir === "down" ? "bg-red-50 text-red-700 border border-red-200" :
+                                               "bg-slate-50 text-slate-600 border border-slate-200"
+                        }`}>
+                          {trendDir === "up" ? "▲" : trendDir === "down" ? "▼" : "→"} {trendDir}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted">
+                      Satellite observations vs historical baseline · thresholds: critical &lt;0.3 · warning 0.3–0.5 · healthy &gt;0.5
+                    </p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     <div className="flex rounded-xl border border-[var(--color-border)] overflow-hidden text-xs font-semibold">
                       {(["ndvi", "delta"] as const).map(v => (
                         <button
                           key={v}
                           onClick={() => setChartView(v)}
-                          className={`px-3 py-1.5 transition-colors ${chartView === v
+                          className={`px-3.5 py-1.5 transition-colors ${chartView === v
                             ? "bg-terra-700 text-white"
                             : "text-muted hover:bg-terra-50"}`}
                         >
@@ -470,78 +489,150 @@ export default function PlotMonitoringPage() {
                         </button>
                       ))}
                     </div>
-                    <span className="text-xs text-muted">{chartData.length} data point{chartData.length !== 1 ? "s" : ""}</span>
+                    <span className="text-xs text-muted bg-[var(--color-surface-subtle)] px-2.5 py-1 rounded-full border border-[var(--color-border)]">
+                      {chartData.length} check{chartData.length !== 1 ? "s" : ""}
+                    </span>
                   </div>
                 </div>
 
-                <ResponsiveContainer width="100%" height={280}>
-                  {chartView === "ndvi" ? (
-                    <AreaChart data={chartData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="ndviGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%"  stopColor="#15803d" stopOpacity={0.18} />
-                          <stop offset="95%" stopColor="#15803d" stopOpacity={0} />
-                        </linearGradient>
-                        <linearGradient id="eviGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%"  stopColor="#d97706" stopOpacity={0.12} />
-                          <stop offset="95%" stopColor="#d97706" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                      <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#9ca3af" }} tickLine={false} axisLine={false} />
-                      <YAxis domain={["auto", "auto"]} tick={{ fontSize: 11, fill: "#9ca3af" }} tickLine={false} axisLine={false} width={42} />
-                      <Tooltip content={<ChartTooltip />} />
-                      <ReferenceLine
-                        y={latest.baseline_ndvi}
-                        stroke="#d97706" strokeDasharray="5 3" strokeWidth={1.5}
-                        label={{ value: "Baseline", fontSize: 10, fill: "#d97706", position: "insideTopRight" }}
-                      />
-                      {chartData.some(d => d.evi != null) && (
-                        <Area type="monotone" dataKey="evi" stroke="#d97706" strokeWidth={1.5}
-                          fill="url(#eviGrad)" dot={false} strokeDasharray="3 2" />
-                      )}
-                      <Area
-                        type="monotone" dataKey="current_ndvi"
-                        stroke="#15803d" strokeWidth={2.5}
-                        fill="url(#ndviGrad)" dot={chartData.length <= 10 ? { r: 3, fill: "#15803d", stroke: "white", strokeWidth: 1.5 } : false}
-                        activeDot={{ r: 5, fill: "#15803d", stroke: "white", strokeWidth: 2 }}
-                      />
-                      {chartData.some(d => d.evi != null) && (
-                        <Legend
-                          wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
-                          formatter={(v) => v === "current_ndvi" ? "NDVI" : "EVI"}
+                <div className="px-2 pt-4 pb-2">
+                  <ResponsiveContainer width="100%" height={320}>
+                    {chartView === "ndvi" ? (
+                      <AreaChart data={chartData} margin={{ top: 8, right: 16, left: -8, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="ndviGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%"  stopColor="#15803d" stopOpacity={0.22} />
+                            <stop offset="100%" stopColor="#15803d" stopOpacity={0.02} />
+                          </linearGradient>
+                          <linearGradient id="eviGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%"  stopColor="#d97706" stopOpacity={0.14} />
+                            <stop offset="100%" stopColor="#d97706" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+
+                        {/* Health zone bands — rendered first so they sit behind everything */}
+                        <ReferenceArea y1={Math.max(yMin, 0)}    y2={Math.min(yMax, 0.3)}  fill="#fef2f2" fillOpacity={1} ifOverflow="hidden" />
+                        <ReferenceArea y1={Math.max(yMin, 0.3)}  y2={Math.min(yMax, 0.5)}  fill="#fffbeb" fillOpacity={1} ifOverflow="hidden" />
+                        <ReferenceArea y1={Math.max(yMin, 0.5)}  y2={Math.min(yMax, 1.0)}  fill="#f0fdf4" fillOpacity={1} ifOverflow="hidden" />
+
+                        <CartesianGrid strokeDasharray="2 4" stroke="#e2e8f0" vertical={false} />
+                        <XAxis
+                          dataKey="date"
+                          tick={{ fontSize: 11, fill: "#94a3b8", fontWeight: 500 }}
+                          tickLine={false} axisLine={false}
+                          interval="preserveStartEnd"
                         />
-                      )}
-                    </AreaChart>
-                  ) : (
-                    <AreaChart data={chartData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="posGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%"  stopColor="#16a34a" stopOpacity={0.2} />
-                          <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
-                        </linearGradient>
-                        <linearGradient id="negGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%"  stopColor="#dc2626" stopOpacity={0.15} />
-                          <stop offset="95%" stopColor="#dc2626" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                      <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#9ca3af" }} tickLine={false} axisLine={false} />
-                      <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} tickLine={false} axisLine={false} width={42} />
-                      <Tooltip content={<ChartTooltip />} />
-                      <ReferenceLine y={0} stroke="#9ca3af" strokeWidth={1} />
-                      <Area
-                        type="monotone" dataKey="delta_ndvi"
-                        stroke={latest.delta_ndvi >= 0 ? "#16a34a" : "#dc2626"}
-                        strokeWidth={2}
-                        fill={latest.delta_ndvi >= 0 ? "url(#posGrad)" : "url(#negGrad)"}
-                        dot={chartData.length <= 10 ? { r: 3 } : false}
-                        activeDot={{ r: 5 }}
-                      />
-                    </AreaChart>
+                        <YAxis
+                          domain={[yMin, yMax]}
+                          tick={{ fontSize: 11, fill: "#94a3b8" }}
+                          tickLine={false} axisLine={false}
+                          width={44}
+                          tickFormatter={(v) => v.toFixed(2)}
+                        />
+                        <Tooltip content={<ChartTooltip />} cursor={{ stroke: "#e2e8f0", strokeWidth: 1.5 }} />
+
+                        {/* Baseline reference */}
+                        <ReferenceLine
+                          y={latest.baseline_ndvi}
+                          stroke="#d97706" strokeDasharray="6 3" strokeWidth={1.5}
+                          label={{ value: `Baseline ${latest.baseline_ndvi.toFixed(3)}`, fontSize: 10, fill: "#d97706", position: "insideTopRight", fontWeight: 600 }}
+                        />
+
+                        {/* Zone threshold lines */}
+                        {yMin < 0.5 && yMax > 0.5 && (
+                          <ReferenceLine y={0.5} stroke="#16a34a" strokeDasharray="2 4" strokeWidth={1} strokeOpacity={0.5} />
+                        )}
+                        {yMin < 0.3 && yMax > 0.3 && (
+                          <ReferenceLine y={0.3} stroke="#dc2626" strokeDasharray="2 4" strokeWidth={1} strokeOpacity={0.5} />
+                        )}
+
+                        {chartData.some(d => d.evi != null) && (
+                          <Area type="monotoneX" dataKey="evi" stroke="#d97706" strokeWidth={1.5}
+                            fill="url(#eviGrad)" dot={false} strokeDasharray="4 2" />
+                        )}
+                        <Area
+                          type="monotoneX" dataKey="current_ndvi"
+                          stroke="#15803d" strokeWidth={3}
+                          fill="url(#ndviGrad)"
+                          dot={chartData.length <= 20
+                            ? { r: 4, fill: "#15803d", stroke: "white", strokeWidth: 2 }
+                            : false}
+                          activeDot={{ r: 6, fill: "#15803d", stroke: "white", strokeWidth: 2.5 }}
+                        />
+                        {chartData.some(d => d.evi != null) && (
+                          <Legend
+                            wrapperStyle={{ fontSize: 11, paddingTop: 12 }}
+                            formatter={(v) => v === "current_ndvi" ? "NDVI" : "EVI"}
+                            iconType="circle" iconSize={8}
+                          />
+                        )}
+                      </AreaChart>
+                    ) : (
+                      <AreaChart data={chartData} margin={{ top: 8, right: 16, left: -8, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="posGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%"  stopColor="#16a34a" stopOpacity={0.22} />
+                            <stop offset="100%" stopColor="#16a34a" stopOpacity={0} />
+                          </linearGradient>
+                          <linearGradient id="negGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%"  stopColor="#dc2626" stopOpacity={0} />
+                            <stop offset="100%" stopColor="#dc2626" stopOpacity={0.18} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="2 4" stroke="#e2e8f0" vertical={false} />
+                        <XAxis
+                          dataKey="date"
+                          tick={{ fontSize: 11, fill: "#94a3b8", fontWeight: 500 }}
+                          tickLine={false} axisLine={false}
+                          interval="preserveStartEnd"
+                        />
+                        <YAxis
+                          tick={{ fontSize: 11, fill: "#94a3b8" }}
+                          tickLine={false} axisLine={false} width={44}
+                          tickFormatter={(v) => (v >= 0 ? `+${v.toFixed(2)}` : v.toFixed(2))}
+                        />
+                        <Tooltip content={<ChartTooltip />} cursor={{ stroke: "#e2e8f0", strokeWidth: 1.5 }} />
+                        <ReferenceLine y={0} stroke="#cbd5e1" strokeWidth={1.5} label={{ value: "No change", fontSize: 10, fill: "#94a3b8", position: "insideTopLeft" }} />
+                        <Area
+                          type="monotoneX" dataKey="delta_ndvi"
+                          stroke={latest.delta_ndvi >= 0 ? "#16a34a" : "#dc2626"}
+                          strokeWidth={3}
+                          fill={latest.delta_ndvi >= 0 ? "url(#posGrad)" : "url(#negGrad)"}
+                          dot={chartData.length <= 20 ? { r: 4, fill: latest.delta_ndvi >= 0 ? "#16a34a" : "#dc2626", stroke: "white", strokeWidth: 2 } : false}
+                          activeDot={{ r: 6, stroke: "white", strokeWidth: 2.5 }}
+                        />
+                      </AreaChart>
+                    )}
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Zone legend strip */}
+                <div className="px-6 pb-4 flex items-center gap-5 flex-wrap">
+                  {[
+                    { color: "bg-red-100",   border: "border-red-200",   dot: "bg-red-500",     label: "Critical  ( < 0.3 )" },
+                    { color: "bg-amber-50",  border: "border-amber-200", dot: "bg-amber-500",   label: "Warning  ( 0.3 – 0.5 )" },
+                    { color: "bg-emerald-50",border: "border-emerald-200",dot: "bg-emerald-600",label: "Healthy  ( > 0.5 )" },
+                  ].map(z => (
+                    <div key={z.label} className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${z.color} ${z.border}`}>
+                      <span className={`w-2 h-2 rounded-full ${z.dot}`} />
+                      {z.label}
+                    </div>
+                  ))}
+                  {ndviTrend !== null && (
+                    <span className="ml-auto text-xs text-muted">
+                      Overall trend: <span className={`font-semibold ${ndviTrend >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+                        {ndviTrend >= 0 ? "▲" : "▼"} {Math.abs(ndviTrend).toFixed(3)}
+                      </span> since first check
+                    </span>
                   )}
-                </ResponsiveContainer>
+                </div>
               </div>
+              );
+            })()}
+
+            {/* ── Spatial vegetation map ── */}
+            {plot?.geometry && (
+              <VegetationMap plotId={plotId} geometry={plot.geometry as GeoJSON.Polygon} />
             )}
 
             {/* ── Alert card + Recommendation + Carbon panel ── */}
