@@ -429,6 +429,256 @@ def fetch_current_ndvi_from_gee(geometry: Dict, days_back: int = 10) -> Optional
         return None
 
 
+def _gee_tile_url(map_id_dict: dict) -> str:
+    """Extract a Mapbox-compatible {z}/{x}/{y} tile URL from a GEE getMapId result."""
+    try:
+        return map_id_dict["tile_fetcher"].url_format
+    except (KeyError, AttributeError):
+        mid = map_id_dict.get("mapid", "")
+        tok = map_id_dict.get("token", "")
+        return f"https://earthengine.googleapis.com/map/{mid}/{{z}}/{{x}}/{{y}}?token={tok}"
+
+
+def _gee_roi(geometry: Dict):
+    """Convert a GeoJSON geometry dict to a GEE geometry object."""
+    import ee
+    if geometry.get("type") == "Polygon":
+        return ee.Geometry.Polygon(geometry["coordinates"])
+    if geometry.get("type") == "Point":
+        return ee.Geometry.Point(geometry["coordinates"]).buffer(500)
+    raise ValueError(f"Unsupported geometry type: {geometry.get('type')}")
+
+
+def get_vegetation_tile_urls(geometry: Dict, days_back: int = 30) -> Optional[Dict]:
+    """
+    Generate GEE raster tile URLs for spatial vegetation visualization.
+    Returns Mapbox-compatible tile URL templates for NDVI, EVI, NBR, and False Color.
+    """
+    try:
+        import ee
+        from datetime import timedelta
+
+        end   = datetime.now(timezone.utc)
+        start = end - timedelta(days=days_back)
+        roi   = _gee_roi(geometry)
+
+        collection = (
+            ee.ImageCollection("COPERNICUS/S2_SR_HARMONIZED")
+            .filterBounds(roi)
+            .filterDate(start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d"))
+            .filter(ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE", 40))
+        )
+
+        count = collection.size().getInfo()
+        actual_start = start
+        if count == 0:
+            actual_start = end - timedelta(days=90)
+            collection = (
+                ee.ImageCollection("COPERNICUS/S2_SR_HARMONIZED")
+                .filterBounds(roi)
+                .filterDate(actual_start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d"))
+                .filter(ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE", 50))
+            )
+            count = collection.size().getInfo()
+
+        def add_indices(img):
+            ndvi = img.normalizedDifference(["B8", "B4"]).rename("ndvi")
+            evi  = img.expression(
+                "2.5*((NIR-RED)/(NIR+6*RED-7.5*BLUE+1))",
+                {"NIR": img.select("B8"), "RED": img.select("B4"), "BLUE": img.select("B2")}
+            ).rename("evi")
+            nbr  = img.normalizedDifference(["B8", "B12"]).rename("nbr")
+            return img.addBands([ndvi, evi, nbr])
+
+        composite = collection.map(add_indices).median()
+        veg_palette  = ["#d73027", "#f46d43", "#fee08b", "#66bd63", "#1a9850"]
+        burn_palette = ["#7f0000", "#d73027", "#fee08b", "#66bd63", "#1a9850"]
+
+        tiles = {
+            "ndvi":        _gee_tile_url(composite.select("ndvi").getMapId({"min": -0.2,  "max": 0.8, "palette": veg_palette})),
+            "evi":         _gee_tile_url(composite.select("evi").getMapId( {"min":  0.0,  "max": 0.7, "palette": veg_palette})),
+            "nbr":         _gee_tile_url(composite.select("nbr").getMapId( {"min": -0.5,  "max": 0.9, "palette": burn_palette})),
+            "false_color": _gee_tile_url(composite.select(["B8", "B4", "B3"]).getMapId({"min": 0, "max": 3000, "gamma": 1.4})),
+        }
+
+        return {
+            "gee_available": True,
+            "tiles": tiles,
+            "date_range": {
+                "from":     actual_start.strftime("%Y-%m-%d"),
+                "to":       end.strftime("%Y-%m-%d"),
+                "n_images": count,
+            },
+        }
+
+    except Exception as e:
+        logger.warning(f"GEE vegetation tile generation failed: {e}")
+        return None
+
+
+# ── Change detection ──────────────────────────────────────────────────────────
+
+ZONE_LABELS = {0: "stable", 1: "degrading", 2: "critical", 3: "improving"}
+ZONE_COLORS = {
+    "stable":    "#3b82f6",
+    "degrading": "#f59e0b",
+    "critical":  "#dc2626",
+    "improving": "#16a34a",
+}
+
+
+def get_change_detection_data(
+    geometry: Dict,
+    current_days: int = 30,
+    baseline_days: int = 180,
+) -> Optional[Dict]:
+    """
+    Pixel-level change detection comparing a recent period to a prior baseline.
+
+    Returns:
+      - change_tile: Mapbox tile URL for the delta-NDVI raster
+          (red = vegetation loss, green = gain)
+      - zones: GeoJSON FeatureCollection of labelled change polygons
+      - stats: % area per classification zone
+      - date_range: periods compared
+    """
+    try:
+        import ee
+        from datetime import timedelta
+
+        end              = datetime.now(timezone.utc)
+        current_start    = end - timedelta(days=current_days)
+        baseline_end     = current_start          # no overlap
+        baseline_start   = end - timedelta(days=baseline_days)
+        roi              = _gee_roi(geometry)
+
+        def ndvi_composite(t_start, t_end, max_cloud: int = 50):
+            col = (
+                ee.ImageCollection("COPERNICUS/S2_SR_HARMONIZED")
+                .filterBounds(roi)
+                .filterDate(t_start.strftime("%Y-%m-%d"), t_end.strftime("%Y-%m-%d"))
+                .filter(ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE", max_cloud))
+                .map(lambda img: img.normalizedDifference(["B8", "B4"]).rename("ndvi"))
+            )
+            n = col.size().getInfo()
+            # Do NOT clip — keeping the full scene so the tile URL renders over
+            # the whole region (same pattern as get_vegetation_tile_urls).
+            # Zone polygons and stats are still clipped via zones_img.clip(roi).
+            return col.median(), n
+
+        current_img,  current_n  = ndvi_composite(current_start,  end,           40)
+        baseline_img, baseline_n = ndvi_composite(baseline_start, baseline_end,  50)
+
+        if current_n == 0 or baseline_n == 0:
+            logger.info(
+                f"Change detection: insufficient imagery "
+                f"(current={current_n}, baseline={baseline_n})"
+            )
+            return {"gee_available": False, "reason": "insufficient imagery for change detection"}
+
+        delta = current_img.subtract(baseline_img).rename("delta_ndvi")
+
+        # ── Change raster tile ────────────────────────────────────────────────
+        change_palette = [
+            "#7f0000", "#d73027", "#f46d43", "#fee08b",
+            "#ffffbf",
+            "#d9ef8b", "#66bd63", "#1a9850", "#006837",
+        ]
+        change_tile = _gee_tile_url(
+            delta.getMapId({"min": -0.4, "max": 0.4, "palette": change_palette})
+        )
+
+        # ── Zone raster  (0=stable 1=degrading 2=critical 3=improving) ────────
+        zones_img = (
+            ee.Image(0)
+            .where(delta.lt(-0.04),  1)   # degrading
+            .where(delta.lt(-0.15),  2)   # critical
+            .where(delta.gt( 0.04),  3)   # improving
+            .rename("zone")
+            .clip(roi)
+        )
+
+        # ── Area statistics per zone ──────────────────────────────────────────
+        zone_areas = (
+            zones_img.eq([0, 1, 2, 3])
+            .rename(["stable", "degrading", "critical", "improving"])
+            .multiply(ee.Image.pixelArea())
+            .reduceRegion(
+                reducer   = ee.Reducer.sum(),
+                geometry  = roi,
+                scale     = 20,
+                maxPixels = 1e8,
+            )
+            .getInfo()
+        )
+        total = sum(v for v in zone_areas.values() if v) or 1.0
+
+        stats = {
+            "stable_pct":    round(100 * zone_areas.get("stable",    0) / total, 1),
+            "degrading_pct": round(100 * zone_areas.get("degrading", 0) / total, 1),
+            "critical_pct":  round(100 * zone_areas.get("critical",  0) / total, 1),
+            "improving_pct": round(100 * zone_areas.get("improving", 0) / total, 1),
+        }
+
+        # ── Zone polygons (GeoJSON) ────────────────────────────────────────────
+        # 20 m = Sentinel-2 native resolution; critical for small plots (10ha ≈ 250 px)
+        zones_geojson: Optional[Dict] = None
+        try:
+            vectors = zones_img.reduceToVectors(
+                geometry      = roi,
+                scale         = 20,
+                maxPixels     = 1e8,
+                maxError      = 5,          # simplify geometry to reduce payload size
+                geometryType  = "polygon",
+                eightConnected= True,
+                labelProperty = "zone",
+                reducer       = ee.Reducer.mode(),
+                bestEffort    = True,
+            )
+            raw = vectors.getInfo()
+            # Drop tiny fragments (< 20 pixels at 20 m = 8 000 m² ≈ 0.8 ha)
+            kept = []
+            for feat in raw.get("features", []):
+                if feat["properties"].get("count", 999) < 20:
+                    continue
+                z   = int(feat["properties"].get("zone", 0))
+                cls = ZONE_LABELS.get(z, "stable")
+                feat["properties"]["classification"] = cls
+                feat["properties"]["color"]          = ZONE_COLORS[cls]
+                kept.append(feat)
+            raw["features"] = kept
+            zones_geojson = raw
+            logger.info(
+                f"Change detection: {len(kept)} zone polygons (after filtering), "
+                f"stats={stats}"
+            )
+        except Exception as poly_err:
+            logger.warning(f"Zone polygon generation failed (stats still available): {poly_err}")
+
+        return {
+            "gee_available": True,
+            "change_tile":   change_tile,
+            "zones":         zones_geojson,
+            "stats":         stats,
+            "date_range": {
+                "current":  {
+                    "from": current_start.strftime("%Y-%m-%d"),
+                    "to":   end.strftime("%Y-%m-%d"),
+                    "n_images": current_n,
+                },
+                "baseline": {
+                    "from": baseline_start.strftime("%Y-%m-%d"),
+                    "to":   baseline_end.strftime("%Y-%m-%d"),
+                    "n_images": baseline_n,
+                },
+            },
+        }
+
+    except Exception as e:
+        logger.warning(f"GEE change detection failed: {e}")
+        return None
+
+
 def get_mock_current_ndvi(geometry: Dict, baseline_ndvi: float) -> Dict:
     """
     Synthetic current observation — used when GEE is unavailable.

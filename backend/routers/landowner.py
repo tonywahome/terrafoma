@@ -34,18 +34,26 @@ class ApprovalRequest(BaseModel):
 
 
 @router.get("/pending-scans")
-async def get_pending_scans(user_id: str):
-    """Get all pending scan results awaiting landowner approval."""
+async def get_pending_scans(user_id: str, plot_id: Optional[str] = None):
+    """
+    Get scan results for a landowner.
+    - Without plot_id: returns only pending_approval credits (dashboard mode).
+    - With plot_id: returns all credits for that specific plot (all statuses).
+    """
     try:
         db = get_admin_client()
 
-        # Get pending credits for this landowner
-        credits_result = db.table("carbon_credits")\
+        query = db.table("carbon_credits")\
             .select("*, scan_results(*), land_plots(name)")\
-            .eq("owner_id", user_id)\
-            .eq("status", "pending_approval")\
-            .execute()
-        
+            .eq("owner_id", user_id)
+
+        if plot_id:
+            query = query.eq("plot_id", plot_id)
+        else:
+            query = query.eq("status", "pending_approval")
+
+        credits_result = query.order("created_at", desc=True).execute()
+
         if not credits_result.data:
             return {"pending_scans": []}
         

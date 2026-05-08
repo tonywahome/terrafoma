@@ -20,6 +20,8 @@ from ml.monitor_biomass import (
     analyze_plot_monitoring_data,
     fetch_current_ndvi_from_gee,
     get_mock_current_ndvi,
+    get_vegetation_tile_urls,
+    get_change_detection_data,
 )
 
 logger = logging.getLogger(__name__)
@@ -248,6 +250,40 @@ async def monitoring_summary():
         return {"total_plots_monitored": 0, "alert_counts": {}, "plots_needing_attention": []}
 
 
+@router.get("/plots/{plot_id}/change-detection")
+async def get_change_detection(
+    plot_id: str,
+    current_days:  int = Query(default=30,  ge=1,  le=90),
+    baseline_days: int = Query(default=180, ge=30, le=365),
+):
+    """
+    Pixel-level change detection: compare the last `current_days` to the prior
+    `baseline_days` window.  Returns a delta-NDVI tile URL, zone polygons (GeoJSON),
+    and per-zone area statistics.
+    """
+    db = get_admin_client()
+    try:
+        result = db.table("land_plots").select("geometry").eq("id", plot_id).execute()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Plot not found")
+
+    geometry = result.data[0].get("geometry")
+    if not geometry:
+        raise HTTPException(status_code=422, detail="Plot has no geometry stored")
+
+    data = get_change_detection_data(
+        geometry,
+        current_days=current_days,
+        baseline_days=baseline_days,
+    )
+    if data is None:
+        return {"gee_available": False}
+    return data
+
+
 @router.post("/run-all")
 async def run_all_plots():
     """
@@ -295,3 +331,32 @@ async def run_all_plots():
         f"{sum(1 for r in reports if r['alert_level']=='critical')} critical alerts"
     )
     return summary
+
+
+@router.get("/plots/{plot_id}/vegetation-tiles")
+async def get_vegetation_tiles(
+    plot_id: str,
+    days_back: int = Query(default=30, ge=1, le=365),
+):
+    """
+    Return GEE raster tile URLs for spatial vegetation visualization.
+    Tile URLs are Mapbox GL-compatible and cover NDVI, EVI, NBR, and False Color.
+    """
+    db = get_admin_client()
+    try:
+        result = db.table("land_plots").select("geometry").eq("id", plot_id).execute()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Plot not found")
+
+    geometry = result.data[0].get("geometry")
+    if not geometry:
+        raise HTTPException(status_code=422, detail="Plot has no geometry stored")
+
+    tile_data = get_vegetation_tile_urls(geometry, days_back=days_back)
+    if tile_data is None:
+        return {"gee_available": False, "tiles": None, "date_range": None}
+
+    return tile_data
