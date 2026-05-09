@@ -18,15 +18,8 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-# Optional GEE dependency — falls back to mock data if not installed
-try:
-    import ee
-    ee.Initialize()
-    _GEE_AVAILABLE = True
-    logger.info("Google Earth Engine initialized successfully")
-except Exception as e:
-    _GEE_AVAILABLE = False
-    logger.warning(f"GEE not available ({e}). Scan will use synthetic mock features.")
+from services.gee_init import initialize_gee
+_GEE_AVAILABLE = initialize_gee()
 
 
 def _mock_features(geometry: Dict) -> Dict:

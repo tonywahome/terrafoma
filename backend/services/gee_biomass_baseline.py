@@ -18,12 +18,8 @@ from typing import Dict, Optional
 
 logger = logging.getLogger(__name__)
 
-try:
-    import ee
-    ee.Initialize()
-    _GEE_AVAILABLE = True
-except Exception:
-    _GEE_AVAILABLE = False
+from services.gee_init import initialize_gee
+_GEE_AVAILABLE = initialize_gee()
 
 
 # ── Rwanda elevation → biomass lookup (fallback when GEE is offline) ──────────

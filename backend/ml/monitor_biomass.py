@@ -25,6 +25,14 @@ from typing import Optional, Dict, Any, List, Tuple
 
 import numpy as np
 
+# Initialize GEE once at import time using the centralized helper.
+# This covers the inline `import ee` calls inside each GEE function.
+try:
+    from services.gee_init import initialize_gee as _init_gee
+    _init_gee()
+except Exception:
+    pass  # GEE unavailable; each function already has its own try/except fallback
+
 logger = logging.getLogger(__name__)
 
 # ── Thresholds ─────────────────────────────────────────────────────────────────

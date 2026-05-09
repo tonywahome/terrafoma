@@ -34,10 +34,10 @@ class CarbonCreditEngine:
         """
         # Initialize Earth Engine
         try:
-            ee.Initialize()
-            logger.info("Earth Engine initialized")
-        except:
-            logger.warning("Earth Engine not initialized - some features unavailable")
+            from services.gee_init import initialize_gee
+            initialize_gee()
+        except Exception as _gee_err:
+            logger.warning(f"Earth Engine not initialized — some features unavailable: {_gee_err}")
         
         # Load trained biomass model
         self.biomass_model = None
